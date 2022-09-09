@@ -1,4 +1,6 @@
 from flask import Flask, json, request
+from src.feedUvlMapper import mapResponse
+
 from src.techniques.vsm import UserStorySimilarityVsm
 from src.mock.mockData import microserviceDataRepresentation
 
@@ -11,8 +13,9 @@ def post_user_stories():
     # data = json.loads(request.data)
     vsmSimilarity = UserStorySimilarityVsm()
     result = vsmSimilarity.measure_similarity(microserviceDataRepresentation)  # TODO: Use real request data
+    res = mapResponse(result)
 
-    return result
+    return res
 
 @app.route("/status", methods=["GET"])
 def get_status():
