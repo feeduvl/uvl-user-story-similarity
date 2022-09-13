@@ -1,8 +1,8 @@
 from flask import Flask, json, request
-from src.feedUvlMapper import mapResponse
 
+from src.feedUvlMapper import mapRequest, mapResponse
 from src.techniques.vsm import UserStorySimilarityVsm
-from src.mock.mockData import microserviceDataRepresentation
+from src.exeptions import UserStoryParsingError
 
 app = Flask(__name__)
 
@@ -10,11 +10,13 @@ app = Flask(__name__)
 # @app.route("/hitec/classify/concepts/lda/run", methods=["POST"])
 @app.route("/run", methods=["POST"])
 def post_user_stories():
-    # data = json.loads(request.data)
-    vsmSimilarity = UserStorySimilarityVsm()
-    result = vsmSimilarity.measure_similarity(microserviceDataRepresentation)  # TODO: Use real request data
-    res = mapResponse(result)
+    data = json.loads(request.data)
 
+    us_dataset = mapRequest(data, app.logger)
+    vsmSimilarity = UserStorySimilarityVsm()
+    result = vsmSimilarity.measure_similarity(us_dataset)
+
+    res = mapResponse(result)
     return res
 
 @app.route("/status", methods=["GET"])
