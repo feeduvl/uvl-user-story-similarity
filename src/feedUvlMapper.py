@@ -1,3 +1,4 @@
+from typing import Tuple
 from src.exeptions import UserStoryParsingError
 
 def mapRequest(reqData, logger):
@@ -38,11 +39,20 @@ def remove_newlines(doc_text: str) -> str:
      res = doc_text.replace("\n", " ")
      return res.strip()
 
-def mapResponse(similarityResults):
+def is_document_focused(reqData) -> Tuple[bool, str]:
+    params = reqData["params"]
+    if not params["focused_document_id"]:
+        return False, ""
+
+    return True, params["focused_document_id"]
+
+def mapResponse(reqData, similarityResultsAllPairs, similarityResultsFocused):
     return {
         "topics": {
-            "similarity_results": similarityResults
+            "similarity_results_all_pairs": similarityResultsAllPairs,
+            "similarity_results_focused": similarityResultsFocused
         },
         "doc_topic": {},
         "metrics": {},
+        "params": reqData["params"]
     }
