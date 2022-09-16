@@ -17,7 +17,7 @@ class UserStorySimilarityVsm(UserStorySimilarity):
         cosine_similarities = cosine_similarity(doc_vector)
 
         # store results
-        result = self.processResultAllPairs(cosine_similarities, us_dataset)
+        result = self.process_result_all_pairs(cosine_similarities, us_dataset)
         return result
 
     # TODO: handle case when besides the focused user story there is no other
@@ -46,11 +46,11 @@ class UserStorySimilarityVsm(UserStorySimilarity):
         cosine_similarities = np.delete(cosine_similarities, focused_index)
 
         # store results
-        result = self.processResultFocused(cosine_similarities, us_dataset, focused_user_story)
+        result = self.process_result_focused(cosine_similarities, us_dataset, focused_user_story)
 
         return result
         
-    def processResultFocused(self, cosine_similarities, us_dataset, focused_user_story):
+    def process_result_focused(self, cosine_similarities, us_dataset, focused_user_story):
         sim_result = []
         for i in range(len(cosine_similarities)):
             if cosine_similarities[i] > 0.5:  # TODO: Remove hardcoded threshold
@@ -69,7 +69,7 @@ class UserStorySimilarityVsm(UserStorySimilarity):
         }
         return result
  
-    def processResultAllPairs(self, cosine_similarities, us_dataset):
+    def process_result_all_pairs(self, cosine_similarities, us_dataset):
         result = []
         # all_pairs = {}  # TODO: could be a nice way to store all results, if needed
         for i in range(len(cosine_similarities)):

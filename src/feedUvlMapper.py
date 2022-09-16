@@ -1,8 +1,8 @@
 from typing import Tuple
 from src.exeptions import UserStoryParsingError
 
-def mapRequest(reqData, logger):
-    docs = reqData["dataset"]["documents"]
+def map_request(req_data, logger):
+    docs = req_data["dataset"]["documents"]
     us_dataset = []
     for doc in docs:
         try:
@@ -17,6 +17,7 @@ def mapRequest(reqData, logger):
             # TODO: include in metrics for feedUVL
             logger.warning(f'User story with id {doc["id"]} could not be extracted.')
             pass
+    
     return us_dataset
 
 def extract_us(text: str) -> str:
@@ -46,14 +47,14 @@ def is_document_focused(reqData) -> Tuple[bool, str]:
 
     return True, params["focused_document_id"]
 
-def mapResponse(reqData, similarityResultsAllPairs, similarityResultsFocused):
+def map_response(req_data, similarity_results_all_pairs, similarity_results_focused):
     return {
         "topics": {
-            "similarity_results_all_pairs": similarityResultsAllPairs,
-            "similarity_results_focused": similarityResultsFocused
+            "similarity_results_all_pairs": similarity_results_all_pairs,
+            "similarity_results_focused": similarity_results_focused
         },
         "doc_topic": {},
         "metrics": {},
-        "params": reqData["params"],
-        "name": reqData["params"]["name"]
+        "params": req_data["params"],
+        "name": req_data["params"]["name"]
     }

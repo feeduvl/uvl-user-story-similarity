@@ -6,7 +6,7 @@ corpus = [
 ]
 
 # TODO: decide if I want to parse also the sinlge ACs (acceptance_criteria entry)
-microserviceDataRepresentation = [
+microservice_data_representation = [
     {
         "id": "COMET-1",
         "text": "Dogs are playing on the street",
