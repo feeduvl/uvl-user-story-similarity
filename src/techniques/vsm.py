@@ -17,15 +17,7 @@ class UserStorySimilarityVsm(UserStorySimilarity):
         cosine_similarities = cosine_similarity(doc_vector)
 
         # store results
-        # all_pairs = {}  # TODO: could be a nice way to store all results, if needed
-        result = []
-        for i in range(len(cosine_similarities)):
-            for j in range(i):
-                # keys = frozenset({us_dataset[i]["id"], us_dataset[j]["id"]})
-                # all_pairs[keys] = cosine_similarities[i][j]
-                entry = self.processResult(cosine_similarities[i][j], us_dataset[i], us_dataset[j])
-                result.append(entry)
-
+        result = self.processResultAllPairs(cosine_similarities, us_dataset)
         return result
 
     # TODO: handle case when besides the focused user story there is no other
@@ -39,6 +31,9 @@ class UserStorySimilarityVsm(UserStorySimilarity):
         corpus = self.retrieve_corpus(us_dataset)
         preprocessed_docs = self.perform_preprocessing(corpus)
         preprocessed_query = self.perform_preprocessing([corpus[focused_index]])
+        # TODO: check if the same
+        # preprocessed_query = self.perform_preprocessing_on_query(corpus[focused_index])
+        # preprocessed_query = [preprocessed_query]
         vectorizer = TfidfVectorizer()
         vectorizer.fit(preprocessed_docs)
         doc_vector = vectorizer.transform(preprocessed_docs)
@@ -74,20 +69,28 @@ class UserStorySimilarityVsm(UserStorySimilarity):
         }
         return result
  
-    def processResult(self, score, us1, us2):
-        if score > 0.5:
-            result_entry = {
-                "id_1": us1["id"],
-                "id_2": us2["id"],
-                "us_text_1": us1["text"],
-                "us_text_2": us2["text"],
-                "score": score,
-                "ac_1": us1["acceptance_criteria"],
-                "ac_2": us2["acceptance_criteria"],
-                "raw_text_1": us1["raw_text"],
-                "raw_text_2": us2["raw_text"]
-            }
-            return result_entry
+    def processResultAllPairs(self, cosine_similarities, us_dataset):
+        result = []
+        # all_pairs = {}  # TODO: could be a nice way to store all results, if needed
+        for i in range(len(cosine_similarities)):
+            for j in range(i):
+                # keys = frozenset({us_dataset[i]["id"], us_dataset[j]["id"]})
+                # all_pairs[keys] = cosine_similarities[i][j]
+                if cosine_similarities[i][j] > 0.5:
+                    result_entry = {
+                        "id_1": us_dataset[i]["id"],
+                        "id_2": us_dataset[j]["id"],
+                        "us_text_1": us_dataset[i]["text"],
+                        "us_text_2": us_dataset[j]["text"],
+                        "score": cosine_similarities[i][j],
+                        "ac_1": us_dataset[i]["acceptance_criteria"],
+                        "ac_2": us_dataset[j]["acceptance_criteria"],
+                        "raw_text_1": us_dataset[i]["raw_text"],
+                        "raw_text_2": us_dataset[j]["raw_text"]
+                    }
+                    result.append(result_entry)
+        
+        return result
 
     def retrieve_corpus(self, us_dataset):
         corpus = []
