@@ -54,5 +54,6 @@ def mapResponse(reqData, similarityResultsAllPairs, similarityResultsFocused):
         },
         "doc_topic": {},
         "metrics": {},
-        "params": reqData["params"]
+        "params": reqData["params"],
+        "name": reqData["params"]["name"]
     }
