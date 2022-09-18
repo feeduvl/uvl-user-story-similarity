@@ -1,6 +1,6 @@
 from flask import Flask, json, request
 
-from src.feedUvlMapper import map_request, map_response, is_document_focused
+from src.feedUvlMapper import FeedUvlMapper
 from src.techniques.vsm import UserStorySimilarityVsm
 
 app = Flask(__name__)
@@ -10,18 +10,19 @@ app = Flask(__name__)
 @app.route("/run", methods=["POST"])
 def post_user_stories():
     data = json.loads(request.data)
-    us_dataset = map_request(data, app.logger)
-    is_focused, focused_id = is_document_focused(data)
+    mapper = FeedUvlMapper(app.logger)
+    us_dataset = mapper.map_request(data)
+    is_focused, focused_id = mapper.is_document_focused(data)
 
     vsm_similarity = UserStorySimilarityVsm()
     result = []
     res = {}
     if is_focused:
         result = vsm_similarity.measure_pairwise_similarity(us_dataset, focused_id)
-        res = map_response(data, [], result)
+        res = mapper.map_response([], result)
     else:
         result = vsm_similarity.measure_all_pairs_similarity(us_dataset)
-        res = map_response(data, result, {})
+        res = mapper.map_response(result, {})
             
     return res
 
