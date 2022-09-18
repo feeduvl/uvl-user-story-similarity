@@ -12,8 +12,7 @@ class UserStorySimilarityVsm(UserStorySimilarity):
         corpus = self.retrieve_corpus(us_dataset)
         preprocessed_docs = self.perform_preprocessing(corpus)
         vectorizer = TfidfVectorizer()
-        vectorizer.fit(preprocessed_docs)
-        doc_vector = vectorizer.transform(preprocessed_docs)
+        doc_vector = vectorizer.fit_transform(preprocessed_docs)
         cosine_similarities = cosine_similarity(doc_vector)
 
         # store results
@@ -35,8 +34,7 @@ class UserStorySimilarityVsm(UserStorySimilarity):
         # preprocessed_query = self.perform_preprocessing_on_query(corpus[focused_index])
         # preprocessed_query = [preprocessed_query]
         vectorizer = TfidfVectorizer()
-        vectorizer.fit(preprocessed_docs)
-        doc_vector = vectorizer.transform(preprocessed_docs)
+        doc_vector = vectorizer.fit_transform(preprocessed_docs) # TODO: Consider preprocessor, tokenizer, stop-words from this vectorizer
         query_vector = vectorizer.transform(preprocessed_query)
         cosine_similarities = cosine_similarity(doc_vector, query_vector).flatten()
 

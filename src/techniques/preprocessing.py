@@ -1,8 +1,6 @@
 import nltk
-from nltk.corpus import stopwords
+from sklearn.feature_extraction.text import ENGLISH_STOP_WORDS
 
-def get_stopwords():
-    return set(stopwords.words('english'))
 
 def get_tokenized_list(doc_text):
     return nltk.word_tokenize(doc_text)
@@ -15,9 +13,9 @@ def word_stemmer(token_list):
     return stemmed
 
 def remove_stopwords(doc_text):
-    stop_words = get_stopwords()
     cleaned_text = []
     for words in doc_text:
-        if words not in stop_words:
+        if words not in ENGLISH_STOP_WORDS:
             cleaned_text.append(words)
     return cleaned_text
+
