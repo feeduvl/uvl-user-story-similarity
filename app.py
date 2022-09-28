@@ -12,17 +12,17 @@ def post_user_stories():
     data = json.loads(request.data)
     mapper = FeedUvlMapper(app.logger)
     us_dataset = mapper.map_request(data)
-    is_focused, focused_id = mapper.is_document_focused(data)
+    is_focused, focused_ids = mapper.is_document_focused(data)
 
     vsm_similarity = UserStorySimilarityVsm()
     result = []
     res = {}
     if is_focused:
-        result = vsm_similarity.measure_pairwise_similarity(us_dataset, focused_id)
-        res = mapper.map_response([], result)
+        result = vsm_similarity.measure_pairwise_similarity(us_dataset, focused_ids)
+        res = mapper.map_response(result)
     else:
         result = vsm_similarity.measure_all_pairs_similarity(us_dataset)
-        res = mapper.map_response(result, {})
+        res = mapper.map_response(result)
             
     return res
 

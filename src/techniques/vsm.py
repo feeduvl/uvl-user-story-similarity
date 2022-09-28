@@ -20,52 +20,55 @@ class UserStorySimilarityVsm(UserStorySimilarity):
         return result
 
     # TODO: handle case when besides the focused user story there is no other
-    def measure_pairwise_similarity(self, us_dataset: list, focused_id):
-        focused_index = next((i for i, item in enumerate(us_dataset) if item["id"] == focused_id), None)
-        if focused_index is None:
-            # if the ID does not exist or if the user story could not be extracted
-            # TODO: return error in the metrics of api response
-            return []
-
+    def measure_pairwise_similarity(self, us_dataset: list, focused_ids: list[str]):
         corpus = self.retrieve_corpus(us_dataset)
         preprocessed_docs = self.perform_preprocessing(corpus)
-        preprocessed_query = self.perform_preprocessing([corpus[focused_index]])
-        # TODO: check if the same
-        # preprocessed_query = self.perform_preprocessing_on_query(corpus[focused_index])
-        # preprocessed_query = [preprocessed_query]
         vectorizer = TfidfVectorizer()
         doc_vector = vectorizer.fit_transform(preprocessed_docs) # TODO: Consider preprocessor, tokenizer, stop-words from this vectorizer
-        query_vector = vectorizer.transform(preprocessed_query)
-        cosine_similarities = cosine_similarity(doc_vector, query_vector).flatten()
+        cosine_similarities = []
+        result = []
+        finished_indices = []
 
-        # remove focused user story
+        for focused_id in focused_ids:
+            focused_index = next((i for i, item in enumerate(us_dataset) if item["id"] == focused_id), None)
+            if focused_index is None:
+                # if the ID does not exist or if the user story could not be extracted
+                # TODO: return error in the metrics of api response
+                continue
+
+            preprocessed_query = [preprocessed_docs[focused_index]]
+       
+            query_vector = vectorizer.transform(preprocessed_query)
+            cosine_similarities_focused = cosine_similarity(doc_vector, query_vector).flatten().tolist()
+            cosine_similarities.append(cosine_similarities_focused)
+
+            self.process_result_entry_focused(cosine_similarities_focused, us_dataset, focused_index, finished_indices, result)
+
+            finished_indices.append(focused_index)
+
+        return result
+
+    def process_result_entry_focused(self, cosine_similarities_focuesd, us_dataset, focused_index, finished_indices, result):
         focused_user_story = us_dataset[focused_index]
-        del us_dataset[focused_index]
-        cosine_similarities = np.delete(cosine_similarities, focused_index)
+        for i, (score, us_representation) in enumerate(zip(cosine_similarities_focuesd, us_dataset)):
+            if i == focused_index or i in finished_indices:
+                continue
+            self.map_to_us_representation(focused_user_story, us_representation, score, result)
 
-        # store results
-        result = self.process_result_focused(cosine_similarities, us_dataset, focused_user_story)
-
-        return result
-        
-    def process_result_focused(self, cosine_similarities, us_dataset, focused_user_story):
-        sim_result = []
-        for i in range(len(cosine_similarities)):
-            if cosine_similarities[i] > 0.5:  # TODO: Remove hardcoded threshold
-                result_entry = {
-                    "id": us_dataset[i]["id"],
-                    "us_text": us_dataset[i]["text"],
-                    "score": cosine_similarities[i],
-                    "ac": us_dataset[i]["acceptance_criteria"],
-                    "raw_text": us_dataset[i]["raw_text"]
-                }
-                sim_result.append(result_entry)
-
-        result = {
-            "focused": focused_user_story,
-            "similar_user_stories": sim_result
-        }
-        return result
+    def map_to_us_representation(self, first, second, score, result_entries):
+        if score > 0.5:
+            result_entry = {
+                "id_1": first["id"],
+                "id_2": second["id"],
+                "us_text_1": first["text"],
+                "us_text_2": second["text"],
+                "score": score,
+                "ac_1": first["acceptance_criteria"],
+                "ac_2": second["acceptance_criteria"],
+                "raw_text_1": first["raw_text"],
+                "raw_text_2": second["raw_text"]
+            }
+            result_entries.append(result_entry)
  
     def process_result_all_pairs(self, cosine_similarities, us_dataset):
         result = []

@@ -45,18 +45,19 @@ class FeedUvlMapper():
         res = doc_text.replace("\n", " ")
         return res.strip()
 
-    def is_document_focused(self, reqData) -> Tuple[bool, str]:
+    def is_document_focused(self, reqData) -> Tuple[bool, list[str]]:
         params = reqData["params"]
-        if not params["focused_document_id"]:
+        if not params["focused_document_ids"]:
             return False, ""
+        ids: str = params["focused_document_ids"]
+        ids = ids.replace(" ", "")
+        ids_array = ids.split(",")
+        return True, ids_array
 
-        return True, params["focused_document_id"]
-
-    def map_response(self, similarity_results_all_pairs, similarity_results_focused):
+    def map_response(self, similarity_results):
         return {
             "topics": {
-                "similarity_results_all_pairs": similarity_results_all_pairs,
-                "similarity_results_focused": similarity_results_focused
+                "similarity_results": similarity_results
             },
             "doc_topic": None,
             "metrics": {},
