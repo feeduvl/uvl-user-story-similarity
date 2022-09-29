@@ -2,14 +2,18 @@ import numpy as np
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 from src.techniques.preprocessing import (get_tokenized_list, remove_stopwords,
-                                          word_stemmer)
+                                          word_stemmer, retrieve_corpus)
 from src.techniques.userStorySimilarity import UserStorySimilarity
+from src.feedUvlMapper import FeedUvlMapper
 
 
 class UserStorySimilarityVsm(UserStorySimilarity):
 
+    def __init__(self, feed_uvl_mapper: FeedUvlMapper) -> None:
+        self.feed_uvl_mapper = feed_uvl_mapper
+
     def measure_all_pairs_similarity(self, us_dataset):
-        corpus = self.retrieve_corpus(us_dataset)
+        corpus = retrieve_corpus(us_dataset)
         preprocessed_docs = self.perform_preprocessing(corpus)
         vectorizer = TfidfVectorizer()
         doc_vector = vectorizer.fit_transform(preprocessed_docs)
@@ -21,7 +25,7 @@ class UserStorySimilarityVsm(UserStorySimilarity):
 
     # TODO: handle case when besides the focused user story there is no other
     def measure_pairwise_similarity(self, us_dataset: list, focused_ids: list[str]):
-        corpus = self.retrieve_corpus(us_dataset)
+        corpus = retrieve_corpus(us_dataset)
         preprocessed_docs = self.perform_preprocessing(corpus)
         vectorizer = TfidfVectorizer()
         doc_vector = vectorizer.fit_transform(preprocessed_docs) # TODO: Consider preprocessor, tokenizer, stop-words from this vectorizer
@@ -46,9 +50,9 @@ class UserStorySimilarityVsm(UserStorySimilarity):
     def process_result_all_pairs(self, cosine_similarities, us_dataset):
         result = []
 
-        for i, (score_row, us_representation_row) in enumerate(zip(cosine_similarities[:-1], us_dataset[:-1])):
-            for score, us_representation_column in zip(score_row[i+1:], us_dataset[i+1:]):
-                self.map_to_us_representation(us_representation_row, us_representation_column, score, result)
+        for i, (score_row, us_representation_1) in enumerate(zip(cosine_similarities[:-1], us_dataset[:-1])):
+            for score, us_representation_2 in zip(score_row[i+1:], us_dataset[i+1:]):
+                self.feed_uvl_mapper.map_to_us_representation(us_representation_1, us_representation_2, score, result)
         
         return result
 
@@ -57,29 +61,7 @@ class UserStorySimilarityVsm(UserStorySimilarity):
         for i, (score, us_representation) in enumerate(zip(cosine_similarities_focuesd, us_dataset)):
             if i == focused_index or i in finished_indices:
                 continue
-            self.map_to_us_representation(focused_user_story, us_representation, score, result)
-
-    def map_to_us_representation(self, first, second, score, result):
-        if score > 0.0:
-            result_entry = {
-                "id_1": first["id"],
-                "id_2": second["id"],
-                "us_text_1": first["text"],
-                "us_text_2": second["text"],
-                "score": score,
-                "ac_1": first["acceptance_criteria"],
-                "ac_2": second["acceptance_criteria"],
-                "raw_text_1": first["raw_text"],
-                "raw_text_2": second["raw_text"]
-            }
-            result.append(result_entry)
-
-    def retrieve_corpus(self, us_dataset):
-        corpus = []
-        for entry in us_dataset:
-            corpus.append(entry["text"])
-        return corpus
-            
+            self.feed_uvl_mapper.map_to_us_representation(focused_user_story, us_representation, score, result) 
 
     def perform_preprocessing(self, corpus):
         preprocessed_corpus = []

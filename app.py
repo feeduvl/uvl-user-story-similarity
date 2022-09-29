@@ -2,6 +2,7 @@ from flask import Flask, json, request
 
 from src.feedUvlMapper import FeedUvlMapper
 from src.techniques.vsm import UserStorySimilarityVsm
+from src.techniques.wordnet import UserStorySimilarityWordnet
 
 app = Flask(__name__)
 
@@ -14,14 +15,22 @@ def post_user_stories():
     us_dataset = mapper.map_request(data)
     is_focused, focused_ids = mapper.is_document_focused(data)
 
-    vsm_similarity = UserStorySimilarityVsm()
+    technique = mapper.get_technique(data)
+    us_similarity = None
+    match technique:
+        case "vsm":
+            us_similarity = UserStorySimilarityVsm(mapper)
+        case "wordnet":
+            us_similarity = UserStorySimilarityWordnet(mapper)
+        case _:
+            pass
+
     result = []
-    res = {}
     if is_focused:
-        result = vsm_similarity.measure_pairwise_similarity(us_dataset, focused_ids)
+        result = us_similarity.measure_pairwise_similarity(us_dataset, focused_ids)
         res = mapper.map_response(result)
     else:
-        result = vsm_similarity.measure_all_pairs_similarity(us_dataset)
+        result = us_similarity.measure_all_pairs_similarity(us_dataset)
         res = mapper.map_response(result)
             
     return res

@@ -6,6 +6,25 @@ class FeedUvlMapper():
     def __init__(self, logger) -> None:
         self.logger = logger
 
+    def map_to_us_representation(self, first, second, score, result):
+        if score > 0.0:
+            result_entry = {
+                "id_1": first["id"],
+                "id_2": second["id"],
+                "us_text_1": first["text"],
+                "us_text_2": second["text"],
+                "score": score,
+                "ac_1": first["acceptance_criteria"],
+                "ac_2": second["acceptance_criteria"],
+                "raw_text_1": first["raw_text"],
+                "raw_text_2": second["raw_text"]
+            }
+            print(result_entry)
+            result.append(result_entry)         
+
+    def get_technique(self, req_data):
+        return req_data["params"]["selectedTechnique"]
+
     def map_request(self, req_data):
         docs = req_data["dataset"]["documents"]
         us_dataset = []
