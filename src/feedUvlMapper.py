@@ -19,7 +19,6 @@ class FeedUvlMapper():
                 "raw_text_1": first["raw_text"],
                 "raw_text_2": second["raw_text"]
             }
-            print(result_entry)
             result.append(result_entry)         
 
     def get_technique(self, req_data):

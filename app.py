@@ -3,6 +3,7 @@ from flask import Flask, json, request
 from src.feedUvlMapper import FeedUvlMapper
 from src.techniques.vsm import UserStorySimilarityVsm
 from src.techniques.wordnet import UserStorySimilarityWordnet
+from src.techniques.word2vec import UserStorySimilarityWord2vec
 
 app = Flask(__name__)
 
@@ -22,6 +23,8 @@ def post_user_stories():
             us_similarity = UserStorySimilarityVsm(mapper)
         case "wordnet":
             us_similarity = UserStorySimilarityWordnet(mapper)
+        case "word2vec":
+            us_similarity = UserStorySimilarityWord2vec(mapper)
         case _:
             pass
 

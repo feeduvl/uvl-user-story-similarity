@@ -1,3 +1,4 @@
+import string
 from nltk import word_tokenize, pos_tag
 from nltk.stem import PorterStemmer
 from sklearn.feature_extraction.text import ENGLISH_STOP_WORDS
@@ -18,10 +19,13 @@ def pos_tagger(token_list):
 
 def remove_stopwords(doc_text):
     cleaned_text = []
-    for words in doc_text:
-        if words not in ENGLISH_STOP_WORDS:
-            cleaned_text.append(words)
+    for word in doc_text:
+        if word.lower() not in ENGLISH_STOP_WORDS:
+            cleaned_text.append(word)
     return cleaned_text
+
+def remove_punctuation(doc_text: str):
+    return doc_text.translate(str.maketrans('', '', string.punctuation))
 
 def retrieve_corpus(us_dataset):
     corpus = []
