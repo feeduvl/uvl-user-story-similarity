@@ -1,4 +1,4 @@
-from lib2to3.pgen2 import token
+from logging import Logger
 from src.techniques.userStorySimilarity import UserStorySimilarity
 from src.techniques.preprocessing import (get_tokenized_list, pos_tagger, remove_punctuation, remove_stopwords, retrieve_corpus, word_stemmer)
 from src.feedUvlMapper import FeedUvlMapper
@@ -6,12 +6,24 @@ from gensim.models import KeyedVectors
 from sklearn.feature_extraction.text import TfidfVectorizer
 
 class UserStorySimilarityWord2vec(UserStorySimilarity):
+    model = None
 
     def __init__(self, feed_uvl_mapper: FeedUvlMapper) -> None:
         self.feed_uvl_mapper = feed_uvl_mapper
-        print("Loading word2vec model...")
-        self.model: KeyedVectors = KeyedVectors.load_word2vec_format('data/GoogleNews-vectors-negative300.bin', binary=True)
-        print("Done loading.")
+
+    @staticmethod
+    def load_model(logger: Logger):
+        logger.info("Loading word2vec model ...")
+        try:
+            # solutions to memory error: 
+            #   increase RAM -> (8GB should be sufficient)
+            #   consider limit param (e.g. limit=500000) -> 1/6 of oriinal size
+            #   use another model with less features, less feature size
+            UserStorySimilarityWord2vec.model: KeyedVectors = KeyedVectors.load_word2vec_format('data/GoogleNews-vectors-negative300.bin', binary=True)
+            logger.info("Done loading word2vec model.")
+        except MemoryError:
+            logger.error("Error when loading word2vec model. Probably not enough RAM.")
+
 
     def measure_all_pairs_similarity(self, us_dataset):
         corpus = retrieve_corpus(us_dataset)
@@ -35,7 +47,6 @@ class UserStorySimilarityWord2vec(UserStorySimilarity):
         corpus = retrieve_corpus(us_dataset)
         result = []
         finished_indices = []
-        # TODO: implement
 
        
         return result
@@ -52,7 +63,7 @@ class UserStorySimilarityWord2vec(UserStorySimilarity):
         denominator = 0.0
         for word_1 in user_story_1:
             try:
-                self.model[word_1]
+                UserStorySimilarityWord2vec.model[word_1]
             except KeyError:
                 continue
             token_index = next((i for i, token in enumerate(self.unique_tokens) if token == word_1.lower()), None)
@@ -65,7 +76,7 @@ class UserStorySimilarityWord2vec(UserStorySimilarity):
             scores = []
             for word_2 in user_story_2:
                 try:
-                    score = self.model.similarity(word_1, word_2)
+                    score = UserStorySimilarityWord2vec.model.similarity(word_1, word_2)
                     scores.append(score)
                 except KeyError:
                     continue

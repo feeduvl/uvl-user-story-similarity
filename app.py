@@ -42,3 +42,13 @@ def post_user_stories():
 def get_status():
     status = {"status": "operational"}
     return status
+
+def before_start_up():
+    UserStorySimilarityWord2vec.load_model(app.logger)
+
+if __name__ == '__main__':  # started via: python3 app.py
+    before_start_up()
+    app.run(debug=True)  # started via: flask (--debug) run
+elif __name__ == 'app':
+    before_start_up()
+
