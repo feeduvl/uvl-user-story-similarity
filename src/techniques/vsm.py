@@ -9,8 +9,9 @@ from src.feedUvlMapper import FeedUvlMapper
 
 class UserStorySimilarityVsm(UserStorySimilarity):
 
-    def __init__(self, feed_uvl_mapper: FeedUvlMapper) -> None:
+    def __init__(self, feed_uvl_mapper: FeedUvlMapper, threshold: float) -> None:
         self.feed_uvl_mapper = feed_uvl_mapper
+        self.threshold = threshold
 
     def measure_all_pairs_similarity(self, us_dataset):
         corpus = retrieve_corpus(us_dataset)
@@ -52,7 +53,7 @@ class UserStorySimilarityVsm(UserStorySimilarity):
 
         for i, (score_row, us_representation_1) in enumerate(zip(cosine_similarities[:-1], us_dataset[:-1])):
             for score, us_representation_2 in zip(score_row[i+1:], us_dataset[i+1:]):
-                self.feed_uvl_mapper.map_to_us_representation(us_representation_1, us_representation_2, score, result)
+                self.feed_uvl_mapper.map_to_us_representation(us_representation_1, us_representation_2, score, result, self.threshold)
         
         return result
 
@@ -61,7 +62,7 @@ class UserStorySimilarityVsm(UserStorySimilarity):
         for i, (score, us_representation) in enumerate(zip(cosine_similarities_focuesd, us_dataset)):
             if i == focused_index or i in finished_indices:
                 continue
-            self.feed_uvl_mapper.map_to_us_representation(focused_user_story, us_representation, score, result) 
+            self.feed_uvl_mapper.map_to_us_representation(focused_user_story, us_representation, score, result, self.threshold) 
 
     def perform_preprocessing(self, corpus):
         preprocessed_corpus = []

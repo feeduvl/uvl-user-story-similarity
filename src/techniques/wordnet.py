@@ -8,8 +8,9 @@ from src.feedUvlMapper import FeedUvlMapper
 
 class UserStorySimilarityWordnet(UserStorySimilarity):
 
-    def __init__(self, feed_uvl_mapper: FeedUvlMapper) -> None:
+    def __init__(self, feed_uvl_mapper: FeedUvlMapper, threshold: float) -> None:
         self.feed_uvl_mapper = feed_uvl_mapper
+        self.threshold = threshold
 
     def measure_all_pairs_similarity(self, us_dataset):
         corpus = retrieve_corpus(us_dataset)
@@ -19,7 +20,7 @@ class UserStorySimilarityWordnet(UserStorySimilarity):
         for i, (us_representation_1, synsets_1) in enumerate(zip(us_dataset[:-1], all_synsets[:-1])):
             for us_representation_2, synsets_2 in zip(us_dataset[i+1:], all_synsets[i+1:]):
                 score = self.user_story_similarity(synsets_1, synsets_2)
-                self.feed_uvl_mapper.map_to_us_representation(us_representation_1, us_representation_2, score, result)
+                self.feed_uvl_mapper.map_to_us_representation(us_representation_1, us_representation_2, score, result, self.threshold)
 
         return result
 
@@ -42,7 +43,7 @@ class UserStorySimilarityWordnet(UserStorySimilarity):
                 if i == focused_index or i in finished_indices:
                     continue
                 score = self.user_story_similarity(focused_synsets, synsets_2)
-                self.feed_uvl_mapper.map_to_us_representation(focused_user_story, us_representation_2, score, result)
+                self.feed_uvl_mapper.map_to_us_representation(focused_user_story, us_representation_2, score, result, self.threshold)
             
             finished_indices.append(focused_index)
         return result

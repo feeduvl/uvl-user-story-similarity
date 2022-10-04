@@ -6,8 +6,8 @@ class FeedUvlMapper():
     def __init__(self, logger) -> None:
         self.logger = logger
 
-    def map_to_us_representation(self, first, second, score, result):
-        if score > 0.0:
+    def map_to_us_representation(self, first, second, score, result, threshold):
+        if score >= threshold:
             result_entry = {
                 "id_1": first["id"],
                 "id_2": second["id"],
@@ -23,6 +23,9 @@ class FeedUvlMapper():
 
     def get_technique(self, req_data):
         return req_data["params"]["selectedTechnique"]
+
+    def get_threshold(self, req_data):
+        return req_data["params"]["threshold"]
 
     def map_request(self, req_data):
         docs = req_data["dataset"]["documents"]

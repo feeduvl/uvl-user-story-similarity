@@ -15,16 +15,17 @@ def post_user_stories():
     mapper = FeedUvlMapper(app.logger)
     us_dataset = mapper.map_request(data)
     is_focused, focused_ids = mapper.is_document_focused(data)
+    threshold = mapper.get_threshold(data)
 
     technique = mapper.get_technique(data)
     us_similarity = None
     match technique:
         case "vsm":
-            us_similarity = UserStorySimilarityVsm(mapper)
+            us_similarity = UserStorySimilarityVsm(mapper, threshold)
         case "wordnet":
-            us_similarity = UserStorySimilarityWordnet(mapper)
+            us_similarity = UserStorySimilarityWordnet(mapper, threshold)
         case "word2vec":
-            us_similarity = UserStorySimilarityWord2vec(mapper)
+            us_similarity = UserStorySimilarityWord2vec(mapper, threshold)
         case _:
             pass
 
