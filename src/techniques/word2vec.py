@@ -45,10 +45,28 @@ class UserStorySimilarityWord2vec(UserStorySimilarity):
 
     def measure_pairwise_similarity(self, us_dataset: list, focused_ids):
         corpus = retrieve_corpus(us_dataset)
+        preprocessed_corpus, preprocessed_docs =self.perform_preprocessing(corpus)
+        vectorizer = TfidfVectorizer()
+        self.unique_tokens = vectorizer.fit(preprocessed_docs).get_feature_names_out()
+        self.idf_of_tokens = vectorizer.idf_
+
         result = []
         finished_indices = []
+        for focused_id in focused_ids:
+            focused_index = next((i for i, item in enumerate(us_dataset) if item["id"] == focused_id), None)
+            if focused_index is None:
+                # if the ID does not exist or if the user story could not be extracted
+                # TODO: return error in the metrics of api response
+                continue
+            focused_us_representation = us_dataset[focused_index]
+            focused_corpus_element = preprocessed_corpus[focused_index]
+            for i, (us_representation_2, preprocessed_corpus_element_2) in enumerate(zip(us_dataset, preprocessed_corpus)):
+                if i == focused_index or i in finished_indices:
+                    continue
+                score = self.user_story_similarity(focused_corpus_element, preprocessed_corpus_element_2)
+                self.feed_uvl_mapper.map_to_us_representation(focused_us_representation, us_representation_2, score, result)
 
-       
+            finished_indices.append(focused_index)
         return result
 
     def user_story_similarity(self, user_story_1, user_story_2):        
