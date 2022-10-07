@@ -49,7 +49,8 @@ def before_start_up():
 
 if __name__ == '__main__':  # started via: python3 app.py
     before_start_up()
-    app.run(debug=True)  # started via: flask (--debug) run
+    # app.run(debug=True)  # started via: flask (--debug) run
+    app.run(debug=False, host="0.0.0.0", port=9697)
 elif __name__ == 'app':
     before_start_up()
 
