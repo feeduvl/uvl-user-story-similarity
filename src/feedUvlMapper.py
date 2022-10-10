@@ -11,8 +11,8 @@ class FeedUvlMapper():
             result_entry = {
                 "id_1": first["id"],
                 "id_2": second["id"],
-                "us_text_1": first["text"],
-                "us_text_2": second["text"],
+                "us_1": first["text"],
+                "us_2": second["text"],
                 "score": score,
                 "ac_1": first["acceptance_criteria"],
                 "ac_2": second["acceptance_criteria"],
@@ -22,7 +22,7 @@ class FeedUvlMapper():
             result.append(result_entry)         
 
     def get_technique(self, req_data):
-        return req_data["params"]["selectedTechnique"]
+        return req_data["params"]["selected_technique"]
 
     def get_threshold(self, req_data):
         return req_data["params"]["threshold"]
