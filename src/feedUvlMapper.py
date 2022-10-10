@@ -25,7 +25,7 @@ class FeedUvlMapper():
         return req_data["params"]["selected_technique"]
 
     def get_threshold(self, req_data):
-        return req_data["params"]["threshold"]
+        return float(req_data["params"]["threshold"])
 
     def map_request(self, req_data):
         docs = req_data["dataset"]["documents"]
