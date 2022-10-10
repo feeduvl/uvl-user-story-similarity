@@ -7,9 +7,7 @@ from src.techniques.word2vec import UserStorySimilarityWord2vec
 
 app = Flask(__name__)
 
-# TODO: name both endpoints right
-# @app.route("/hitec/classify/concepts/lda/run", methods=["POST"])
-@app.route("/run", methods=["POST"])
+@app.route("/hitec/classify/concepts/us-similarity/run", methods=["POST"])
 def post_user_stories():
     data = json.loads(request.data)
     mapper = FeedUvlMapper(app.logger)
@@ -39,7 +37,7 @@ def post_user_stories():
             
     return res
 
-@app.route("/status", methods=["GET"])
+@app.route("/hitec/classify/concepts/us-similarity/status", methods=["GET"])
 def get_status():
     status = {"status": "operational"}
     return status
