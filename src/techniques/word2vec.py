@@ -20,7 +20,7 @@ class UserStorySimilarityWord2vec(UserStorySimilarity):
             #   increase RAM -> (8GB should be sufficient)
             #   consider limit param (e.g. limit=500000) -> 1/6 of oriinal size
             #   use another model with less features, less feature size
-            # UserStorySimilarityWord2vec.model: KeyedVectors = KeyedVectors.load_word2vec_format('data/GoogleNews-vectors-negative300.bin', binary=True, limit=500000)
+            UserStorySimilarityWord2vec.model: KeyedVectors = KeyedVectors.load_word2vec_format('data/GoogleNews-vectors-negative300-SLIM.bin', binary=True)
             logger.info("Done loading word2vec model.")
         except MemoryError:
             logger.error("Error when loading word2vec model. Probably not enough RAM.")
