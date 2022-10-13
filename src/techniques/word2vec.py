@@ -30,7 +30,9 @@ class UserStorySimilarityWord2vec(UserStorySimilarity):
         corpus = retrieve_corpus(us_dataset)
         preprocessed_corpus, preprocessed_docs =self.perform_preprocessing(corpus)
         result = []
-
+        if not preprocessed_docs:
+            return result
+        
         vectorizer = TfidfVectorizer()
         self.unique_tokens = vectorizer.fit(preprocessed_docs).get_feature_names_out()
         self.idf_of_tokens = vectorizer.idf_
@@ -39,8 +41,6 @@ class UserStorySimilarityWord2vec(UserStorySimilarity):
             for us_representation_2, preprocessed_corpus_element_2 in zip(us_dataset[i+1:], preprocessed_corpus[i+1:]):
                 score = self.user_story_similarity(preprocessed_corpus_element_1, preprocessed_corpus_element_2)
                 self.feed_uvl_mapper.map_to_us_representation(us_representation_1, us_representation_2, score, result, self.threshold)
-
-        score = self.user_story_similarity(preprocessed_corpus[0], preprocessed_corpus[3])
         
         return result
 

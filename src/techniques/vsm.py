@@ -17,6 +17,8 @@ class UserStorySimilarityVsm(UserStorySimilarity):
         corpus = retrieve_corpus(us_dataset)
         preprocessed_docs = self.perform_preprocessing(corpus)
         vectorizer = TfidfVectorizer()
+        if not preprocessed_docs:
+            return []
         doc_vector = vectorizer.fit_transform(preprocessed_docs)
         cosine_similarities = cosine_similarity(doc_vector).tolist()
 
