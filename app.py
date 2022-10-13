@@ -1,3 +1,4 @@
+from time import time
 from flask import Flask, json, request
 
 from src.feedUvlMapper import FeedUvlMapper
@@ -9,9 +10,10 @@ app = Flask(__name__)
 
 @app.route("/hitec/classify/concepts/us-similarity/run", methods=["POST"])
 def post_user_stories():
+    start = time()
     data = json.loads(request.data)
     mapper = FeedUvlMapper(app.logger)
-    us_dataset = mapper.map_request(data)
+    us_dataset, unextracted_us = mapper.map_request(data)
     is_focused, focused_ids = mapper.is_document_focused(data)
     threshold = mapper.get_threshold(data)
 
@@ -27,13 +29,20 @@ def post_user_stories():
         case _:
             pass
 
+    unexistent_ids_count = 0
     result = []
     if is_focused:
-        result = us_similarity.measure_pairwise_similarity(us_dataset, focused_ids)
-        res = mapper.map_response(result)
+        result, unexistent_ids_count = us_similarity.measure_pairwise_similarity(us_dataset, focused_ids, unextracted_us["ids"])
     else:
         result = us_similarity.measure_all_pairs_similarity(us_dataset)
-        res = mapper.map_response(result)
+    metrics = {
+        "runtime": time() - start,
+        "user_story_count": len(us_dataset),
+        "similar_us_pairs": len(result),
+        "unextracted_us": unextracted_us["count"],
+        "unexistent_ids": unexistent_ids_count
+    }
+    res = mapper.map_response(result, metrics)
             
     return res
 

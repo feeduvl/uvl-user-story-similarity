@@ -29,6 +29,8 @@ class FeedUvlMapper():
 
     def map_request(self, req_data):
         docs = req_data["dataset"]["documents"]
+        unextracted_count = 0
+        unextracted_ids = []
         us_dataset = []
         for doc in docs:
             try:
@@ -39,12 +41,16 @@ class FeedUvlMapper():
                     "raw_text": doc["text"]
                 })
             except UserStoryParsingError:
-                # user story could be recognized and will be skipped
-                # TODO: include in metrics for feedUVL
+                # user story could not be recognized and will be skipped
                 self.logger.warning(f'User story with id {doc["id"]} could not be extracted.')
-                pass
-        
-        return us_dataset
+                unextracted_count += 1
+                unextracted_ids.append(doc["id"])
+
+        unextracted_us = {
+            "count": unextracted_count,
+            "ids": unextracted_ids
+        }
+        return us_dataset, unextracted_us
 
     def extract_us(self, text: str) -> str:
         try:
@@ -75,12 +81,18 @@ class FeedUvlMapper():
         ids_array = ids.split(",")
         return True, ids_array
 
-    def map_response(self, similarity_results):
+    def map_response(self, similarity_results, metrics):
         return {
             "topics": {
                 "similarity_results": similarity_results
             },
             "doc_topic": None,
-            "metrics": {},
+            "metrics": {
+                "runtime": metrics["runtime"],
+                "user_stories": metrics["user_story_count"],
+                "similar_us_pairs": metrics["similar_us_pairs"],
+                "unextracted_us": metrics["unextracted_us"],
+                "unexistent_ids": metrics["unexistent_ids"]
+            },
             "codes": None
         }
