@@ -36,7 +36,7 @@ def post_user_stories():
     else:
         result = us_similarity.measure_all_pairs_similarity(us_dataset)
     metrics = {
-        "runtime": time() - start,
+        "runtime": round(time() - start, 4),
         "user_story_count": len(us_dataset),
         "similar_us_pairs": len(result),
         "unextracted_us": unextracted_us["count"],

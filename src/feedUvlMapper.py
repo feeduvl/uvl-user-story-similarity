@@ -13,7 +13,7 @@ class FeedUvlMapper():
                 "id_2": second["id"],
                 "us_1": first["text"],
                 "us_2": second["text"],
-                "score": score,
+                "score": round(score, 4),
                 "ac_1": first["acceptance_criteria"],
                 "ac_2": second["acceptance_criteria"],
                 "raw_text_1": first["raw_text"],
@@ -88,7 +88,7 @@ class FeedUvlMapper():
             },
             "doc_topic": None,
             "metrics": {
-                "runtime": metrics["runtime"],
+                "runtime_in_s": metrics["runtime"],
                 "user_stories": metrics["user_story_count"],
                 "similar_us_pairs": metrics["similar_us_pairs"],
                 "unextracted_us": metrics["unextracted_us"],
