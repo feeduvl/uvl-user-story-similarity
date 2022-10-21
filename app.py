@@ -14,7 +14,7 @@ def post_user_stories():
     data = json.loads(request.data)
     mapper = FeedUvlMapper(app.logger)
     us_dataset, unextracted_us = mapper.map_request(data)
-    is_focused, focused_ids = mapper.is_document_focused(data)
+    is_focused, focused_ids = mapper.are_documents_focused(data)
     threshold = mapper.get_threshold(data)
 
     technique = mapper.get_technique(data)

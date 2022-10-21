@@ -29,3 +29,8 @@ TODO: OpenAPI doc
 4. Start the app 
   - via: `python3 app.py` (for debugging mode change `debug=` to `True` in the bottom of app.py)
   - alternatively via `flask --debug run`
+
+## Run tests
+
+- `coverage run --source=src -m pytest`
+- `coverage report`

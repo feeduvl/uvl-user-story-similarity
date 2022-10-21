@@ -6,7 +6,7 @@ class FeedUvlMapper():
     def __init__(self, logger) -> None:
         self.logger = logger
 
-    def map_to_us_representation(self, first, second, score, result, threshold):
+    def map_similarity_result(self, first, second, score, threshold, result):
         if score >= threshold:
             result_entry = {
                 "id_1": first["id"],
@@ -36,8 +36,8 @@ class FeedUvlMapper():
             try:
                 us_dataset.append({
                     "id": doc["id"],
-                    "text": self.remove_newlines(self.extract_us(doc["text"])),
-                    "acceptance_criteria": self.extract_acs(doc["text"]),
+                    "text": self._remove_newlines(self._extract_us(doc["text"])),
+                    "acceptance_criteria": self._extract_acs(doc["text"]),
                     "raw_text": doc["text"]
                 })
             except UserStoryParsingError:
@@ -51,28 +51,9 @@ class FeedUvlMapper():
             "ids": unextracted_ids
         }
         return us_dataset, unextracted_us
-
-    def extract_us(self, text: str) -> str:
-        try:
-            start = text.index("###")
-            end = text.index("###", start+1)
-            return text[start+3:end]
-        except ValueError:
-            raise UserStoryParsingError
     
-    def extract_acs(self, text: str) -> str:
-        try:
-            start = text.index("+++")
-            end = text.index("+++", start+1)
-            return text[start+3:end]
-        except ValueError:
-            return ""
 
-    def remove_newlines(self, doc_text: str) -> str:
-        res = doc_text.replace("\n", " ")
-        return res.strip()
-
-    def is_document_focused(self, reqData) -> Tuple[bool, list[str]]:
+    def are_documents_focused(self, reqData) -> Tuple[bool, list[str]]:
         params = reqData["params"]
         if not params["focused_document_ids"]:
             return False, ""
@@ -96,3 +77,23 @@ class FeedUvlMapper():
             },
             "codes": None
         }
+
+    def _extract_us(self, text: str) -> str:
+        try:
+            start = text.index("###")
+            end = text.index("###", start+1)
+            return text[start+3:end]
+        except ValueError:
+            raise UserStoryParsingError
+    
+    def _extract_acs(self, text: str) -> str:
+        try:
+            start = text.index("+++")
+            end = text.index("+++", start+1)
+            return text[start+3:end]
+        except ValueError:
+            return ""
+
+    def _remove_newlines(self, doc_text: str) -> str:
+        res = doc_text.replace("\n", " ")
+        return res.strip()

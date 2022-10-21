@@ -20,7 +20,7 @@ class UserStorySimilarityWordnet(UserStorySimilarity):
         for i, (us_representation_1, synsets_1) in enumerate(zip(us_dataset[:-1], all_synsets[:-1])):
             for us_representation_2, synsets_2 in zip(us_dataset[i+1:], all_synsets[i+1:]):
                 score = self.user_story_similarity(synsets_1, synsets_2)
-                self.feed_uvl_mapper.map_to_us_representation(us_representation_1, us_representation_2, score, result, self.threshold)
+                self.feed_uvl_mapper.map_similarity_result(us_representation_1, us_representation_2, score, self.threshold, result)
 
         return result
 
@@ -45,7 +45,7 @@ class UserStorySimilarityWordnet(UserStorySimilarity):
                 if i == focused_index or i in finished_indices:
                     continue
                 score = self.user_story_similarity(focused_synsets, synsets_2)
-                self.feed_uvl_mapper.map_to_us_representation(focused_user_story, us_representation_2, score, result, self.threshold)
+                self.feed_uvl_mapper.map_similarity_result(focused_user_story, us_representation_2, score, self.threshold, result)
             
             finished_indices.append(focused_index)
 

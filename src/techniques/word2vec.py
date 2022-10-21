@@ -40,7 +40,7 @@ class UserStorySimilarityWord2vec(UserStorySimilarity):
         for i, (us_representation_1, preprocessed_corpus_element_1) in enumerate(zip(us_dataset[:-1], preprocessed_corpus[:-1])):
             for us_representation_2, preprocessed_corpus_element_2 in zip(us_dataset[i+1:], preprocessed_corpus[i+1:]):
                 score = self.user_story_similarity(preprocessed_corpus_element_1, preprocessed_corpus_element_2)
-                self.feed_uvl_mapper.map_to_us_representation(us_representation_1, us_representation_2, score, result, self.threshold)
+                self.feed_uvl_mapper.map_similarity_result(us_representation_1, us_representation_2, score, self.threshold, result)
         
         return result
 
@@ -68,7 +68,7 @@ class UserStorySimilarityWord2vec(UserStorySimilarity):
                 if i == focused_index or i in finished_indices:
                     continue
                 score = self.user_story_similarity(focused_corpus_element, preprocessed_corpus_element_2)
-                self.feed_uvl_mapper.map_to_us_representation(focused_us_representation, us_representation_2, score, result, self.threshold)
+                self.feed_uvl_mapper.map_similarity_result(focused_us_representation, us_representation_2, score, self.threshold, result)
 
             finished_indices.append(focused_index)
 

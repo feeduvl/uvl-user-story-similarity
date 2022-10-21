@@ -57,7 +57,7 @@ class UserStorySimilarityVsm(UserStorySimilarity):
 
         for i, (score_row, us_representation_1) in enumerate(zip(cosine_similarities[:-1], us_dataset[:-1])):
             for score, us_representation_2 in zip(score_row[i+1:], us_dataset[i+1:]):
-                self.feed_uvl_mapper.map_to_us_representation(us_representation_1, us_representation_2, score, result, self.threshold)
+                self.feed_uvl_mapper.map_similarity_result(us_representation_1, us_representation_2, score, self.threshold, result)
         
         return result
 
@@ -66,7 +66,7 @@ class UserStorySimilarityVsm(UserStorySimilarity):
         for i, (score, us_representation) in enumerate(zip(cosine_similarities_focuesd, us_dataset)):
             if i == focused_index or i in finished_indices:
                 continue
-            self.feed_uvl_mapper.map_to_us_representation(focused_user_story, us_representation, score, result, self.threshold) 
+            self.feed_uvl_mapper.map_similarity_result(focused_user_story, us_representation, score, self.threshold, result) 
 
     def perform_preprocessing(self, corpus):
         preprocessed_corpus = []
