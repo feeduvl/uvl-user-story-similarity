@@ -3,8 +3,8 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 from src.techniques.preprocessing import (get_tokenized_list, remove_stopwords,
                                           word_stemmer, retrieve_corpus)
-from src.techniques.userStorySimilarity import UserStorySimilarity
-from src.feedUvlMapper import FeedUvlMapper
+from src.techniques.user_story_similarity import UserStorySimilarity
+from src.feeduvl_mapper import FeedUvlMapper
 
 
 class UserStorySimilarityVsm(UserStorySimilarity):

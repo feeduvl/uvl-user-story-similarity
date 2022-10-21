@@ -1,7 +1,7 @@
 from nltk.corpus import wordnet as wn
-from src.techniques.userStorySimilarity import UserStorySimilarity
+from src.techniques.user_story_similarity import UserStorySimilarity
 from src.techniques.preprocessing import (get_tokenized_list, pos_tagger, retrieve_corpus)
-from src.feedUvlMapper import FeedUvlMapper
+from src.feeduvl_mapper import FeedUvlMapper
 
 # TODO: ? POS tagging (tell Wordnet what POS we’re looking for)
 # Wordnet only contains info on nouns, verbs, adjectives and adverbs

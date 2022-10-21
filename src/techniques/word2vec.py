@@ -1,7 +1,7 @@
 from logging import Logger
-from src.techniques.userStorySimilarity import UserStorySimilarity
+from src.techniques.user_story_similarity import UserStorySimilarity
 from src.techniques.preprocessing import (get_tokenized_list, pos_tagger, remove_punctuation, remove_stopwords, retrieve_corpus, word_stemmer)
-from src.feedUvlMapper import FeedUvlMapper
+from src.feeduvl_mapper import FeedUvlMapper
 from gensim.models import KeyedVectors
 from sklearn.feature_extraction.text import TfidfVectorizer
 

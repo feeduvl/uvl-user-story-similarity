@@ -1,7 +1,7 @@
 from time import time
 from flask import Flask, json, request
 
-from src.feedUvlMapper import FeedUvlMapper
+from src.feeduvl_mapper import FeedUvlMapper
 from src.techniques.vsm import UserStorySimilarityVsm
 from src.techniques.wordnet import UserStorySimilarityWordnet
 from src.techniques.word2vec import UserStorySimilarityWord2vec
