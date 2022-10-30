@@ -92,8 +92,8 @@ class UserStorySimilarityWordnet(UserStorySimilarity):
             return 'n'
         if tag.startswith('V'):
             return 'v'
-        if tag.startswith('J'):
+        if tag.startswith('J'): # adjevtive
             return 'a'
-        if tag.startswith('R'):
+        if tag.startswith('R'): # adverb
             return 'r'
         return None

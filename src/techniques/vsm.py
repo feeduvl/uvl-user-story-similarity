@@ -1,10 +1,9 @@
-import numpy as np
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
-from src.techniques.preprocessing import (get_tokenized_list, remove_stopwords,
-                                          word_stemmer, retrieve_corpus)
-from src.techniques.user_story_similarity import UserStorySimilarity
 from src.feeduvl_mapper import FeedUvlMapper
+from src.techniques.preprocessing import (get_tokenized_list, remove_stopwords,
+                                          retrieve_corpus, word_stemmer)
+from src.techniques.user_story_similarity import UserStorySimilarity
 
 
 class UserStorySimilarityVsm(UserStorySimilarity):
