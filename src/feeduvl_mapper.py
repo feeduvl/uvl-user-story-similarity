@@ -29,28 +29,37 @@ class FeedUvlMapper():
 
     def map_request(self, req_data):
         docs = req_data["dataset"]["documents"]
-        unextracted_count = 0
-        unextracted_ids = []
+        unextracted_us_count = 0
+        unextracted_us_ids = []
+        unextracted_ac_count = 0
+        unextracted_ac_ids = []
         us_dataset = []
         for doc in docs:
+            ac, is_ac_extracted = self._extract_acs(doc["text"])
+            if not is_ac_extracted:
+                self.logger.warning(f'Acceptance Criteria with US id {doc["id"]} could not be extracted.')
+                unextracted_ac_count += 1
+                unextracted_ac_ids.append(doc["id"])
             try:
                 us_dataset.append({
                     "id": doc["id"],
                     "text": self._remove_newlines(self._extract_us(doc["text"])),
-                    "acceptance_criteria": self._extract_acs(doc["text"]),
+                    "acceptance_criteria": ac,
                     "raw_text": doc["text"]
                 })
             except UserStoryParsingError:
                 # user story could not be recognized and will be skipped
                 self.logger.warning(f'User story with id {doc["id"]} could not be extracted.')
-                unextracted_count += 1
-                unextracted_ids.append(doc["id"])
+                unextracted_us_count += 1
+                unextracted_us_ids.append(doc["id"])
 
-        unextracted_us = {
-            "count": unextracted_count,
-            "ids": unextracted_ids
+        unextracted = {
+            "us_count": unextracted_us_count,
+            "us_ids": unextracted_us_ids,
+            "ac_count": unextracted_ac_count,
+            "ac_ids": unextracted_ac_ids
         }
-        return us_dataset, unextracted_us
+        return us_dataset, unextracted
     
 
     def are_documents_focused(self, reqData) -> Tuple[bool, list[str]]:
@@ -73,6 +82,7 @@ class FeedUvlMapper():
                 "user_stories": metrics["user_story_count"],
                 "similar_us_pairs": metrics["similar_us_pairs"],
                 "unextracted_us": metrics["unextracted_us"],
+                "unextracted_ac": metrics["unextracted_ac"],
                 "unexistent_ids": metrics["unexistent_ids"]
             },
             "codes": None
@@ -86,13 +96,13 @@ class FeedUvlMapper():
         except ValueError:
             raise UserStoryParsingError
     
-    def _extract_acs(self, text: str) -> str:
+    def _extract_acs(self, text: str) -> Tuple[str, bool]:
         try:
             start = text.index("+++")
             end = text.index("+++", start+1)
-            return text[start+3:end]
+            return text[start+3:end], True
         except ValueError:
-            return ""
+            return "", False
 
     def _remove_newlines(self, doc_text: str) -> str:
         res = doc_text.replace("\n", " ")

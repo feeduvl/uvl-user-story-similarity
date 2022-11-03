@@ -63,6 +63,13 @@ expected_us_dataset_entry_dict = {
     "raw_text": "###\nAs an user\nI want to do sth.,\nso that I can achieve sth.\n###\n\nAcceptance criteria (post conditions):\n+++* AC 1+++"
 }
 
+expected_us_dataset_entry_dict_croped_us = {
+    "id": "COMET-203",
+    "text": "As an user I want to do sth., so that I can",
+    "acceptance_criteria": "* AC 1",
+    "raw_text": "###\nAs an user\nI want to do sth.,\nso that I can### achieve sth.\n###\n\nAcceptance criteria (post conditions):\n+++* AC 1+++"
+}
+
 similarity_results = [
     {
         "id_1": "COMET-1",
@@ -82,6 +89,7 @@ result_metrics = {
     "user_story_count": 2,
     "similar_us_pairs": 1,
     "unextracted_us": 0,
+    "unextracted_ac": 0,
     "unexistent_ids": 0
 }
 
@@ -95,6 +103,7 @@ expected_response = {
         "user_stories": result_metrics["user_story_count"],
         "similar_us_pairs": result_metrics["similar_us_pairs"],
         "unextracted_us": result_metrics["unextracted_us"],
+        "unextracted_ac": result_metrics["unextracted_ac"],
         "unexistent_ids": result_metrics["unexistent_ids"]
     },
     "codes": None
@@ -161,9 +170,11 @@ def test_get_threshold_casts_to_float(mapper: FeedUvlMapper, req_data):
 # test map_request method
 @pytest.mark.parametrize("req_data,expected_us_dataset_entry_dict", [(req_data, expected_us_dataset_entry_dict)])
 def test_map_request(mapper: FeedUvlMapper, req_data, expected_us_dataset_entry_dict):
-    us_dataset, unextracted_us = mapper.map_request(req_data)
-    assert unextracted_us["count"] == 0
-    assert not unextracted_us["ids"]
+    us_dataset, unextracted = mapper.map_request(req_data)
+    assert unextracted["us_count"] == 0
+    assert not unextracted["us_ids"]
+    assert unextracted["ac_count"] == 0
+    assert not unextracted["ac_ids"]
     assert len(us_dataset) == 2
     TestCase().assertDictEqual(expected_us_dataset_entry_dict, us_dataset[0])
 
@@ -171,11 +182,25 @@ def test_map_request(mapper: FeedUvlMapper, req_data, expected_us_dataset_entry_
 def test_map_request_unextracted_us(mapper: FeedUvlMapper, req_data):
     req_data_temp = copy.deepcopy(req_data)
     req_data_temp["dataset"]["documents"][0]["text"] = "##\nAs an user\nI want to do sth.,\nso that I can achieve sth.\n###\n\nAcceptance criteria (post conditions):\n+++* AC 1+++"
-    us_dataset, unextracted_us = mapper.map_request(req_data_temp)
-    assert unextracted_us["count"] == 1
-    assert len(unextracted_us["ids"]) == 1
-    assert unextracted_us["ids"][0] == req_data_temp["dataset"]["documents"][0]["id"]
+    us_dataset, unextracted = mapper.map_request(req_data_temp)
+    assert unextracted["us_count"] == 1
+    assert len(unextracted["us_ids"]) == 1
+    assert unextracted["us_ids"][0] == req_data_temp["dataset"]["documents"][0]["id"]
+    assert unextracted["ac_count"] == 0
+    assert not unextracted["ac_ids"]
     assert len(us_dataset) == 1
+
+@pytest.mark.parametrize("req_data,expected_us_dataset_entry_dict_croped_us", [(req_data, expected_us_dataset_entry_dict_croped_us)])
+def test_map_request_more_delimiters_than_needed(mapper: FeedUvlMapper, req_data, expected_us_dataset_entry_dict_croped_us):
+    req_data_temp = copy.deepcopy(req_data)
+    req_data_temp["dataset"]["documents"][0]["text"] = "###\nAs an user\nI want to do sth.,\nso that I can### achieve sth.\n###\n\nAcceptance criteria (post conditions):\n+++* AC 1+++"
+    us_dataset, unextracted = mapper.map_request(req_data_temp)
+    assert unextracted["us_count"] == 0
+    assert not unextracted["us_ids"]
+    assert unextracted["ac_count"] == 0
+    assert not unextracted["ac_ids"]
+    assert len(us_dataset) == 2
+    TestCase().assertDictEqual(expected_us_dataset_entry_dict_croped_us, us_dataset[0])
 
 @pytest.mark.parametrize("req_data", [req_data])
 def test_map_request_unextracted_ac(mapper: FeedUvlMapper, req_data):
@@ -185,9 +210,11 @@ def test_map_request_unextracted_ac(mapper: FeedUvlMapper, req_data):
     expected_us_dataset_entry_dict_temp["raw_text"] = wrong_raw_text
     req_data_temp = copy.deepcopy(req_data)
     req_data_temp["dataset"]["documents"][0]["text"] = wrong_raw_text
-    us_dataset, unextracted_us = mapper.map_request(req_data_temp)
-    assert unextracted_us["count"] == 0
-    assert not unextracted_us["ids"]
+    us_dataset, unextracted = mapper.map_request(req_data_temp)
+    assert unextracted["us_count"] == 0
+    assert not unextracted["us_ids"]
+    assert unextracted["ac_count"] == 1
+    assert unextracted["ac_ids"][0] == req_data_temp["dataset"]["documents"][0]["id"]
     TestCase().assertDictEqual(expected_us_dataset_entry_dict_temp, us_dataset[0])
 
 # test are_documents_focused method
