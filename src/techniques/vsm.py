@@ -1,7 +1,7 @@
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 from src.feeduvl_mapper import FeedUvlMapper
-from src.techniques.preprocessing import (get_tokenized_list, remove_stopwords,
+from src.techniques.preprocessing import (get_tokenized_list, remove_punctuation, remove_stopwords,
                                           retrieve_corpus, word_stemmer)
 from src.techniques.user_story_similarity import UserStorySimilarity
 
@@ -70,7 +70,8 @@ class UserStorySimilarityVsm(UserStorySimilarity):
     def perform_preprocessing(self, corpus):
         preprocessed_corpus = []
         for doc in corpus:
-            tokens = get_tokenized_list(doc)
+            doc_text = remove_punctuation(doc)
+            tokens = get_tokenized_list(doc_text)
             doc_text = remove_stopwords(tokens)
             doc_text  = word_stemmer(doc_text)
             doc_text = ' '.join(doc_text)

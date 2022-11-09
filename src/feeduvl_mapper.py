@@ -1,3 +1,4 @@
+import re
 from typing import Tuple
 from src.exeptions import UserStoryParsingError
 
@@ -29,6 +30,8 @@ class FeedUvlMapper():
 
     def map_request(self, req_data):
         docs = req_data["dataset"]["documents"]
+        without_us_skeleton = req_data["params"]["without_us_skeleton"]
+        only_us_action = req_data["params"]["only_us_action"]
         unextracted_us_count = 0
         unextracted_us_ids = []
         unextracted_ac_count = 0
@@ -43,7 +46,7 @@ class FeedUvlMapper():
             try:
                 us_dataset.append({
                     "id": doc["id"],
-                    "text": self._remove_newlines(self._extract_us(doc["text"])),
+                    "text": self._remove_newlines(self._extract_us(doc["text"], without_us_skeleton, only_us_action)),
                     "acceptance_criteria": ac,
                     "raw_text": doc["text"]
                 })
@@ -88,19 +91,42 @@ class FeedUvlMapper():
             "codes": None
         }
 
-    def _extract_us(self, text: str) -> str:
+    def _extract_us(self, text: str, without_skeleton: bool, only_action: bool) -> str:
         try:
             start = text.index("###")
             end = text.index("###", start+1)
-            return text[start+3:end]
+            us = text[start+3:end]
         except ValueError:
             raise UserStoryParsingError
+        if only_action:
+            return self._get_us_action(us)
+        if without_skeleton:
+            us = self._remove_us_skeleton(us)
+        return us
+
+    def _get_us_action(self, us: str) -> str:
+        try:
+            return re.search(r'i want(.*?)so that', us, flags=re.IGNORECASE | re.S).group(1).strip()
+        except AttributeError:
+            pass
+        try:
+            return re.search(r'i want(.*?)$', us, flags=re.IGNORECASE | re.S).group(1).strip()
+        except AttributeError:
+            self.logger.warning(f'user story with id could not be reduced to it\'s action.')
+            return us
+
+    def _remove_us_skeleton(self, us: str) -> str:
+        skeleton = ["as a ", "as an ", "i want ", "so that ", "*as* ", "*i want* ", "*As*\n"]
+        skeleton = "|".join(map(re.escape, skeleton))
+        compiled = re.compile("(%s)" % skeleton, flags=re.IGNORECASE | re.S)
+        us = compiled.sub("", us)
+        return us
     
     def _extract_acs(self, text: str) -> Tuple[str, bool]:
         try:
             start = text.index("+++")
             end = text.index("+++", start+1)
-            return text[start+3:end], True
+            return text[start+3:end].strip(), True
         except ValueError:
             return "", False
 
