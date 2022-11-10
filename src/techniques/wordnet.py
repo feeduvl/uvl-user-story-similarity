@@ -1,7 +1,8 @@
 from nltk.corpus import wordnet as wn
 from src.techniques.user_story_similarity import UserStorySimilarity
-from src.techniques.preprocessing import (get_tokenized_list, pos_tagger, retrieve_corpus)
+from src.techniques.preprocessing import (get_tokenized_list, pos_tagger, remove_punctuation, remove_stopwords, retrieve_corpus)
 from src.feeduvl_mapper import FeedUvlMapper
+from sklearn.feature_extraction.text import TfidfVectorizer
 
 # TODO: ? POS tagging (tell Wordnet what POS we’re looking for)
 # Wordnet only contains info on nouns, verbs, adjectives and adverbs
@@ -14,19 +15,29 @@ class UserStorySimilarityWordnet(UserStorySimilarity):
 
     def measure_all_pairs_similarity(self, us_dataset):
         corpus = retrieve_corpus(us_dataset)
-        _, all_synsets = self.perform_preprocessing(corpus)
+        preprocessed_corpus, all_synsets, preprocessed_docs = self.perform_preprocessing(corpus)
         result = []
 
-        for i, (us_representation_1, synsets_1) in enumerate(zip(us_dataset[:-1], all_synsets[:-1])):
-            for us_representation_2, synsets_2 in zip(us_dataset[i+1:], all_synsets[i+1:]):
-                score = self.user_story_similarity(synsets_1, synsets_2)
+        if not all_synsets:
+            return result
+
+        vectorizer = TfidfVectorizer()
+        self.unique_tokens = vectorizer.fit(preprocessed_docs).get_feature_names_out()
+        self.idf_of_tokens = vectorizer.idf_
+
+        for i, (us_representation_1, synsets_1, preprocessed_corpus_element_1) in enumerate(zip(us_dataset[:-1], all_synsets[:-1], preprocessed_corpus[:-1])):
+            for us_representation_2, synsets_2, preprocessed_corpus_element_2 in zip(us_dataset[i+1:], all_synsets[i+1:], preprocessed_corpus[i+1:]):
+                score = self.user_story_similarity(synsets_1, synsets_2, preprocessed_corpus_element_1, preprocessed_corpus_element_2)
                 self.feed_uvl_mapper.map_similarity_result(us_representation_1, us_representation_2, score, self.threshold, result)
 
         return result
 
     def measure_pairwise_similarity(self, us_dataset: list, focused_ids: list[str], unextracted_ids: list[str]):
         corpus = retrieve_corpus(us_dataset)
-        _, all_synsets = self.perform_preprocessing(corpus)
+        preprocessed_corpus, all_synsets, preprocessed_docs = self.perform_preprocessing(corpus)
+        vectorizer = TfidfVectorizer()
+        self.unique_tokens = vectorizer.fit(preprocessed_docs).get_feature_names_out()
+        self.idf_of_tokens = vectorizer.idf_
 
         result = []
         finished_indices = []
@@ -40,42 +51,65 @@ class UserStorySimilarityWordnet(UserStorySimilarity):
                 continue
             focused_user_story = us_dataset[focused_index]
             focused_synsets = all_synsets[focused_index]
+            focused_corpus_element = preprocessed_corpus[focused_index]
             
-            for i, (us_representation_2, synsets_2) in enumerate(zip(us_dataset, all_synsets)):
+            for i, (us_representation_2, synsets_2, preprocessed_corpus_element_2) in enumerate(zip(us_dataset, all_synsets, preprocessed_corpus)):
                 if i == focused_index or i in finished_indices:
                     continue
-                score = self.user_story_similarity(focused_synsets, synsets_2)
+                score = self.user_story_similarity(focused_synsets, synsets_2, focused_corpus_element, preprocessed_corpus_element_2)
                 self.feed_uvl_mapper.map_similarity_result(focused_user_story, us_representation_2, score, self.threshold, result)
             
             finished_indices.append(focused_index)
 
         return result, unexistent_ids_count
 
-    def user_story_similarity(self, synsets_1, synsets_2):
-        score, count = 0.0, 0
-        for synset in synsets_1:
-            best_score = max([synset.wup_similarity(ss) for ss in synsets_2])  # TODO: use WuP sim
-            if best_score is not None:
-                score += best_score
-                count += 1
-        score /= count  # TODO: handle zero division
+    def user_story_similarity(self, synsets_1, synsets_2, user_story_1, user_story_2):
+        numerator_1, denominator_1 = self.calculate_term(synsets_1, synsets_2, user_story_1, user_story_2)
+        numerator_2, denominator_2 = self.calculate_term(synsets_2, synsets_1, user_story_2, user_story_1)
+        score = 0.5*(numerator_1/denominator_1 + numerator_2/denominator_2)
         return score
+
+    def calculate_term(self, synsets_1, synsets_2, user_story_1, user_story_2):
+        numerator = 0.0
+        denominator = 0.0
+        for synset_1, word_1 in zip(synsets_1, user_story_1):
+            token_index = next((i for i, token in enumerate(self.unique_tokens) if token == word_1.lower()), None)
+            if token_index is None:
+                # TODO: consider this
+                print("not found")
+            idf_of_token = self.idf_of_tokens[token_index]
+
+            best_score = max([synset_1.wup_similarity(ss) for ss in synsets_2])
+            if best_score is not None:
+                #TODO: what to do in the other case
+                best_score *= idf_of_token
+                numerator += best_score
+                denominator += idf_of_token
+        return numerator, denominator
 
     def perform_preprocessing(self, corpus):
         preprocessed_corpus = []
+        preprocessen_docs = []
         all_synsets = []
         for doc in corpus:
             # corpus preprocessing
-            tokens = get_tokenized_list(doc)
-            doc_text = pos_tagger(tokens)
-            preprocessed_corpus.append(doc_text)
+            doc_text = remove_punctuation(doc)
+            tokens = get_tokenized_list(doc_text)
+            tokens = remove_stopwords(tokens)
+            pos_tagged = pos_tagger(tokens)
+            preprocessed_corpus.append(tokens)
 
             # predefine the synsets for each corpus element
-            synsets = [self.tagged_to_synset(*tagged_word) for tagged_word in doc_text]
+            # TODO: what happens if the synsets list results empty here
+            synsets = [self.tagged_to_synset(*tagged_word) for tagged_word in pos_tagged]
             synsets = [ss for ss in synsets if ss]
             all_synsets.append(synsets)
-        return preprocessed_corpus, all_synsets
+            
+            preprocessen_doc_text = ' '.join(tokens)
+            preprocessen_docs.append(preprocessen_doc_text)
+        return preprocessed_corpus, all_synsets, preprocessen_docs
 
+    #TODO: I call it only with one param?
     def tagged_to_synset(self, word, tag):
         wn_tag = self.penn_to_wn(tag)
         if wn_tag is None:
