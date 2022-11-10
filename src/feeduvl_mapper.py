@@ -98,9 +98,9 @@ class FeedUvlMapper():
             us = text[start+3:end]
         except ValueError:
             raise UserStoryParsingError
-        if only_action:
+        if only_action == "true":
             return self._get_us_action(us)
-        if without_skeleton:
+        if without_skeleton == "true":
             us = self._remove_us_skeleton(us)
         return us
 
