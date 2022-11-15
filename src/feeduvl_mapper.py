@@ -37,6 +37,7 @@ class FeedUvlMapper():
         unextracted_ac_count = 0
         unextracted_ac_ids = []
         us_dataset = []
+        avg_words = 0
         for doc in docs:
             ac, is_ac_extracted = self._extract_acs(doc["text"])
             if not is_ac_extracted:
@@ -44,25 +45,29 @@ class FeedUvlMapper():
                 unextracted_ac_count += 1
                 unextracted_ac_ids.append(doc["id"])
             try:
+                us_text = self._remove_newlines(self._extract_us(doc["text"], without_us_skeleton, only_us_action))
                 us_dataset.append({
                     "id": doc["id"],
-                    "text": self._remove_newlines(self._extract_us(doc["text"], without_us_skeleton, only_us_action)),
+                    "text": us_text,
                     "acceptance_criteria": ac,
                     "raw_text": doc["text"]
                 })
+                avg_words += self._get_word_count(us_text)
             except UserStoryParsingError:
                 # user story could not be recognized and will be skipped
                 self.logger.warning(f'User story with id {doc["id"]} could not be extracted.')
                 unextracted_us_count += 1
                 unextracted_us_ids.append(doc["id"])
 
-        unextracted = {
+        avg_words /= len(us_dataset)
+        metrics = {
             "us_count": unextracted_us_count,
             "us_ids": unextracted_us_ids,
             "ac_count": unextracted_ac_count,
-            "ac_ids": unextracted_ac_ids
+            "ac_ids": unextracted_ac_ids,
+            "avg_words": avg_words
         }
-        return us_dataset, unextracted
+        return us_dataset, metrics
     
 
     def are_documents_focused(self, reqData) -> Tuple[bool, list[str]]:
@@ -80,14 +85,7 @@ class FeedUvlMapper():
                 "similarity_results": similarity_results
             },
             "doc_topic": None,
-            "metrics": {
-                "runtime_in_s": metrics["runtime"],
-                "user_stories": metrics["user_story_count"],
-                "similar_us_pairs": metrics["similar_us_pairs"],
-                "unextracted_us": metrics["unextracted_us"],
-                "unextracted_ac": metrics["unextracted_ac"],
-                "unexistent_ids": metrics["unexistent_ids"]
-            },
+            "metrics": metrics,
             "codes": None
         }
 
@@ -133,3 +131,6 @@ class FeedUvlMapper():
     def _remove_newlines(self, doc_text: str) -> str:
         res = doc_text.replace("\n", " ")
         return res.strip()
+
+    def _get_word_count(self, us_text: str) -> int:
+        return len(re.findall(r'\w+', us_text))

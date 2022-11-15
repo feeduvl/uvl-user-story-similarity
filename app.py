@@ -13,7 +13,7 @@ def post_user_stories():
     start = time()
     data = json.loads(request.data)
     mapper = FeedUvlMapper(app.logger)
-    us_dataset, unextracted = mapper.map_request(data)
+    us_dataset, dataset_metrics = mapper.map_request(data)
     is_focused, focused_ids = mapper.are_documents_focused(data)
     threshold = mapper.get_threshold(data)
 
@@ -32,16 +32,17 @@ def post_user_stories():
     unexistent_ids_count = 0
     result = []
     if is_focused:
-        result, unexistent_ids_count = us_similarity.measure_pairwise_similarity(us_dataset, focused_ids, unextracted["us_ids"])
+        result, unexistent_ids_count = us_similarity.measure_pairwise_similarity(us_dataset, focused_ids, dataset_metrics["us_ids"])
     else:
         result = us_similarity.measure_all_pairs_similarity(us_dataset)
     metrics = {
-        "runtime": round(time() - start, 4),
-        "user_story_count": len(us_dataset),
+        "runtime_in_s": round(time() - start, 4),
+        "user_stories": len(us_dataset),
         "similar_us_pairs": len(result),
-        "unextracted_us": unextracted["us_count"],
-        "unextracted_ac": unextracted["ac_count"],
-        "unexistent_ids": unexistent_ids_count
+        "unextracted_us": dataset_metrics["us_count"],
+        "unextracted_ac": dataset_metrics["ac_count"],
+        "unexistent_ids": unexistent_ids_count,
+        "avg_words": dataset_metrics["avg_words"]
     }
     res = mapper.map_response(result, metrics)
             
