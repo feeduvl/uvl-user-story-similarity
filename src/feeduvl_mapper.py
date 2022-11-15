@@ -1,6 +1,7 @@
 import re
 from typing import Tuple
 from src.exeptions import UserStoryParsingError
+from src.techniques.preprocessing import get_us_action, remove_us_skeleton
 
 class FeedUvlMapper():
 
@@ -45,10 +46,11 @@ class FeedUvlMapper():
                 unextracted_ac_count += 1
                 unextracted_ac_ids.append(doc["id"])
             try:
-                us_text = self._remove_newlines(self._extract_us(doc["text"], without_us_skeleton, only_us_action))
+                us_text, us_text_preprocessed = self._extract_us(doc["text"], without_us_skeleton, only_us_action)
                 us_dataset.append({
                     "id": doc["id"],
                     "text": us_text,
+                    "preprocessed_text": us_text_preprocessed,
                     "acceptance_criteria": ac,
                     "raw_text": doc["text"]
                 })
@@ -94,31 +96,15 @@ class FeedUvlMapper():
             start = text.index("###")
             end = text.index("###", start+1)
             us = text[start+3:end]
+            us = self._remove_newlines(us)
         except ValueError:
             raise UserStoryParsingError
+        # TODO: would be prettier to do this in the respective preprocessing mthods wthin the NLP techniques
         if only_action == "true":
-            return self._get_us_action(us)
+            return us, get_us_action(us)
         if without_skeleton == "true":
-            us = self._remove_us_skeleton(us)
-        return us
-
-    def _get_us_action(self, us: str) -> str:
-        try:
-            return re.search(r'i want(.*?)so that', us, flags=re.IGNORECASE | re.S).group(1).strip()
-        except AttributeError:
-            pass
-        try:
-            return re.search(r'i want(.*?)$', us, flags=re.IGNORECASE | re.S).group(1).strip()
-        except AttributeError:
-            self.logger.warning(f'user story with id could not be reduced to it\'s action.')
-            return us
-
-    def _remove_us_skeleton(self, us: str) -> str:
-        skeleton = ["as a ", "as an ", "i want ", "so that ", "*as* ", "*i want* ", "*As*\n"]
-        skeleton = "|".join(map(re.escape, skeleton))
-        compiled = re.compile("(%s)" % skeleton, flags=re.IGNORECASE | re.S)
-        us = compiled.sub("", us)
-        return us
+            return us, remove_us_skeleton(us)
+        return us, us
     
     def _extract_acs(self, text: str) -> Tuple[str, bool]:
         try:

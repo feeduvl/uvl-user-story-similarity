@@ -1,4 +1,5 @@
 import string
+import re
 from nltk import word_tokenize, pos_tag
 from nltk.stem import PorterStemmer
 from sklearn.feature_extraction.text import ENGLISH_STOP_WORDS
@@ -38,5 +39,23 @@ def remove_punctuation(doc_text: str):
 def retrieve_corpus(us_dataset):
     corpus = []
     for entry in us_dataset:
-        corpus.append(entry["text"])
+        corpus.append(entry["preprocessed_text"])
     return corpus
+
+def get_us_action(us: str) -> str:
+        try:
+            return re.search(r'i want(.*?)so that', us, flags=re.IGNORECASE | re.S).group(1).strip()
+        except AttributeError:
+            pass
+        try:
+            return re.search(r'i want(.*?)$', us, flags=re.IGNORECASE | re.S).group(1).strip()
+        except AttributeError:
+            # TODO: log message
+            return us
+
+def remove_us_skeleton(us: str) -> str:
+    skeleton = ["as a ", "as an ", "i want ", "so that ", "*as* ", "*i want* ", "*As*\n"]
+    skeleton = "|".join(map(re.escape, skeleton))
+    compiled = re.compile("(%s)" % skeleton, flags=re.IGNORECASE | re.S)
+    us = compiled.sub("", us)
+    return us

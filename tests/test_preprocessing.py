@@ -1,7 +1,7 @@
 import pytest
 from src.techniques.preprocessing import (get_tokenized_list, pos_tagger,
-                                          remove_punctuation, remove_stopwords,
-                                          retrieve_corpus, word_stemmer)
+    remove_punctuation, remove_stopwords, retrieve_corpus, word_stemmer,
+    remove_us_skeleton, get_us_action)
 
 
 def test_get_tokenized_list():
@@ -66,18 +66,21 @@ def test_retrieve_corpus():
         {
             "id": "COMET-1",
             "text": "us1",
+            "preprocessed_text": "us1",
             "acceptance_criteria": "example acceptance criteria",
             "raw_text": "example raw text"
         },
         {
             "id": "COMET-2",
             "text": "us2",
+            "preprocessed_text": "us2",
             "acceptance_criteria": "example acceptance criteria",
             "raw_text": "example raw text"
         },
         {
             "id": "COMET-3",
             "text": "us3",
+            "preprocessed_text": "us3",
             "acceptance_criteria": "example acceptance criteria",
             "raw_text": "example raw text"
         }
@@ -100,3 +103,46 @@ def test_retrieve_corpus_missing_field():
 def test_retrieve_corpus_emtpy_list():
     result = retrieve_corpus([])
     assert result == []
+
+# test _get_us_action
+def test_get_us_action():
+    us = "As a user I wAnt to do that action sO thAT I can achieve this purpose."
+    expected_us = "to do that action"
+    result = get_us_action(us)
+    assert result == expected_us
+
+def test_get_us_action_without_reason():
+    us = "As a user I want to do that action."
+    expected_us = "to do that action."
+    result = get_us_action(us)
+    assert result == expected_us
+
+def test_get_us_action_special_chars():
+    us = "As a user,\n I want to do that action,\n so that I can achieve this purpose."
+    expected_us = "to do that action,"
+    result = get_us_action(us)
+    assert result == expected_us
+
+def test_get_us_action_error():
+    us = "As a user,\n want to do that action,\n so I can achieve this purpose."
+    result = get_us_action(us)
+    assert result == us
+
+# test _remove_us_skeleton
+def test_remove_us_skeleton():
+    us = "As a user,\n I want to do that action,\n so that I can achieve this purpose."
+    expected_us = "user,\n to do that action,\n I can achieve this purpose."
+    result = remove_us_skeleton(us)
+    assert result == expected_us
+
+def test_remove_us_skeleton_without_action():
+    us = "As a user,\n so that I can achieve this purpose."
+    expected_us = "user,\n I can achieve this purpose."
+    result = remove_us_skeleton(us)
+    assert result == expected_us
+
+def test_remove_us_skeleton_without_skeleton():
+    us = "Blu Bli Bli Bla"
+    expected_us = "Blu Bli Bli Bla"
+    result = remove_us_skeleton(us)
+    assert result == expected_us

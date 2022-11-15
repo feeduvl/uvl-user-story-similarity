@@ -61,6 +61,7 @@ req_data = {
 expected_us_dataset_entry_dict = {
     "id": "COMET-203",
     "text": "As an user I want to do sth., so that I can achieve sth.",
+    "preprocessed_text": "As an user I want to do sth., so that I can achieve sth.",
     "acceptance_criteria": "* AC 1",
     "raw_text": "###\nAs an user\nI want to do sth.,\nso that I can achieve sth.\n###\n\nAcceptance criteria (post conditions):\n+++* AC 1+++"
 }
@@ -68,6 +69,7 @@ expected_us_dataset_entry_dict = {
 expected_us_dataset_entry_dict_croped_us = {
     "id": "COMET-203",
     "text": "As an user I want to do sth., so that I can",
+    "preprocessed_text": "As an user I want to do sth., so that I can",
     "acceptance_criteria": "* AC 1",
     "raw_text": "###\nAs an user\nI want to do sth.,\nso that I can### achieve sth.\n###\n\nAcceptance criteria (post conditions):\n+++* AC 1+++"
 }
@@ -87,12 +89,13 @@ similarity_results = [
 ]
 
 result_metrics = {
-    "runtime": 0.2,
-    "user_story_count": 2,
+    "runtime_in_s": 0.2,
+    "user_stories": 2,
     "similar_us_pairs": 1,
     "unextracted_us": 0,
     "unextracted_ac": 0,
-    "unexistent_ids": 0
+    "unexistent_ids": 0,
+    "avg_words": 3
 }
 
 expected_response = {
@@ -100,14 +103,7 @@ expected_response = {
         "similarity_results": similarity_results
     },
     "doc_topic": None,
-    "metrics": {
-        "runtime_in_s": result_metrics["runtime"],
-        "user_stories": result_metrics["user_story_count"],
-        "similar_us_pairs": result_metrics["similar_us_pairs"],
-        "unextracted_us": result_metrics["unextracted_us"],
-        "unextracted_ac": result_metrics["unextracted_ac"],
-        "unexistent_ids": result_metrics["unexistent_ids"]
-    },
+    "metrics": result_metrics,
     "codes": None
 }
 
@@ -241,67 +237,3 @@ def test_is_docment_focused_true(mapper: FeedUvlMapper, req_data):
 def test_map_response(mapper: FeedUvlMapper, similarity_results, result_metrics, expected_response):
     response = mapper.map_response(similarity_results, result_metrics)
     TestCase().assertDictEqual(expected_response, response)
-
-# test _get_us_action
-@pytest.mark.parametrize("req_data", [req_data])
-def test_get_us_action(mapper: FeedUvlMapper, req_data):
-    req_data_temp = copy.deepcopy(req_data)
-    req_data_temp["params"]["only_us_action"] = True
-    us = "As a user I wAnt to do that action sO thAT I can achieve this purpose."
-    expected_us = "to do that action"
-    result = mapper._get_us_action(us)
-    assert result == expected_us
-
-@pytest.mark.parametrize("req_data", [req_data])
-def test_get_us_action_without_reason(mapper: FeedUvlMapper, req_data):
-    req_data_temp = copy.deepcopy(req_data)
-    req_data_temp["params"]["only_us_action"] = True
-    us = "As a user I want to do that action."
-    expected_us = "to do that action."
-    result = mapper._get_us_action(us)
-    assert result == expected_us
-
-@pytest.mark.parametrize("req_data", [req_data])
-def test_get_us_action_special_chars(mapper: FeedUvlMapper, req_data):
-    req_data_temp = copy.deepcopy(req_data)
-    req_data_temp["params"]["only_us_action"] = True
-    us = "As a user,\n I want to do that action,\n so that I can achieve this purpose."
-    expected_us = "to do that action,"
-    result = mapper._get_us_action(us)
-    assert result == expected_us
-
-@pytest.mark.parametrize("req_data", [req_data])
-def test_get_us_action_error(mapper: FeedUvlMapper, req_data):
-    req_data_temp = copy.deepcopy(req_data)
-    req_data_temp["params"]["only_us_action"] = True
-    us = "As a user,\n want to do that action,\n so I can achieve this purpose."
-    result = mapper._get_us_action(us)
-    assert result == us
-
-# test _remove_us_skeleton
-@pytest.mark.parametrize("req_data", [req_data])
-def test_remove_us_skeleton(mapper: FeedUvlMapper, req_data):
-    req_data_temp = copy.deepcopy(req_data)
-    req_data_temp["params"]["without_us_skeleton"] = True
-    us = "As a user,\n I want to do that action,\n so that I can achieve this purpose."
-    expected_us = "user,\n to do that action,\n I can achieve this purpose."
-    result = mapper._remove_us_skeleton(us)
-    assert result == expected_us
-
-@pytest.mark.parametrize("req_data", [req_data])
-def test_remove_us_skeleton_without_action(mapper: FeedUvlMapper, req_data):
-    req_data_temp = copy.deepcopy(req_data)
-    req_data_temp["params"]["without_us_skeleton"] = True
-    us = "As a user,\n so that I can achieve this purpose."
-    expected_us = "user,\n I can achieve this purpose."
-    result = mapper._remove_us_skeleton(us)
-    assert result == expected_us
-
-@pytest.mark.parametrize("req_data", [req_data])
-def test_remove_us_skeleton_without_skeleton(mapper: FeedUvlMapper, req_data):
-    req_data_temp = copy.deepcopy(req_data)
-    req_data_temp["params"]["without_us_skeleton"] = True
-    us = "Blu Bli Bli Bla"
-    expected_us = "Blu Bli Bli Bla"
-    result = mapper._remove_us_skeleton(us)
-    assert result == expected_us
