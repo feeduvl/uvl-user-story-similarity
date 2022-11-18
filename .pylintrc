@@ -1,0 +1,6 @@
+[FORMAT]
+max-line-length=150
+max-args=6
+good-names=i,j,k,_,x,y,us,ac,ps
+[MASTER]
+init-hook='import sys; sys.path.append("./")'

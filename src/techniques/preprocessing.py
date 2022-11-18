@@ -1,3 +1,5 @@
+""" techniques.preprocessing module """
+
 import string
 import re
 from nltk import word_tokenize, pos_tag
@@ -37,23 +39,26 @@ def remove_punctuation(doc_text: str):
     return doc_text.translate(str.maketrans('', '', string.punctuation))
 
 def retrieve_corpus(us_dataset):
+    """ Build an user story corpus """
     corpus = []
     for entry in us_dataset:
         corpus.append(entry["preprocessed_text"])
     return corpus
 
 def get_us_action(us: str) -> str:
-        try:
-            return re.search(r'i want(.*?)so that', us, flags=re.IGNORECASE | re.S).group(1).strip()
-        except AttributeError:
-            pass
-        try:
-            return re.search(r'i want(.*?)$', us, flags=re.IGNORECASE | re.S).group(1).strip()
-        except AttributeError:
-            # TODO: log message
-            return us
+    """ Return only the action of the user story """
+    try:
+        return re.search(r'i want(.*?)so that', us, flags=re.IGNORECASE | re.S).group(1).strip()
+    except AttributeError:
+        pass
+    try:
+        return re.search(r'i want(.*?)$', us, flags=re.IGNORECASE | re.S).group(1).strip()
+    except AttributeError:
+        # TODO: log message
+        return us
 
 def remove_us_skeleton(us: str) -> str:
+    """ Remove the user story template words """
     skeleton = ["as a ", "as an ", "i want ", "so that ", "*as* ", "*i want* ", "*As*\n"]
     skeleton = "|".join(map(re.escape, skeleton))
     compiled = re.compile("(%s)" % skeleton, flags=re.IGNORECASE | re.S)

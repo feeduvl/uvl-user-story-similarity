@@ -1,2 +1,4 @@
+""" This module provides custom errors"""
+
 class UserStoryParsingError(Exception):
-    pass
+    """ User story parsing/extraction error"""

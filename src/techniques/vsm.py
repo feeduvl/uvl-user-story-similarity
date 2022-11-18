@@ -1,3 +1,5 @@
+""" techniques.vsm module """
+
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 from src.feeduvl_mapper import FeedUvlMapper
@@ -7,14 +9,19 @@ from src.techniques.user_story_similarity import UserStorySimilarity
 
 
 class UserStorySimilarityVsm(UserStorySimilarity):
+    """
+    User Story similarity analysis with the Vector Space Model and TF-IDF weighting
+    using the cosine similarity as metric
+    """
 
     def __init__(self, feed_uvl_mapper: FeedUvlMapper, threshold: float) -> None:
         self.feed_uvl_mapper = feed_uvl_mapper
         self.threshold = threshold
 
-    def measure_all_pairs_similarity(self, us_dataset):
+    def measure_all_pairs_similarity(self, us_dataset: list):
+        """ Similarity analysis for all pairwise user story combinations """
         corpus = retrieve_corpus(us_dataset)
-        preprocessed_docs = self.perform_preprocessing(corpus)
+        preprocessed_docs = self._perform_preprocessing(corpus)
         vectorizer = TfidfVectorizer()
         if not preprocessed_docs:
             return []
@@ -22,16 +29,20 @@ class UserStorySimilarityVsm(UserStorySimilarity):
         cosine_similarities = cosine_similarity(doc_vector).tolist()
 
         # store results
-        result = self.process_result_all_pairs(cosine_similarities, us_dataset)
+        result = self._process_result_all_pairs(cosine_similarities, us_dataset)
         return result
 
     # TODO: handle case when besides the focused user story there is no other
     def measure_pairwise_similarity(self, us_dataset: list, focused_ids: list[str], unextracted_ids: list[str]):
+        """
+        Similarity analysis for all focused user stories\n
+        The user stories given in focused focused_ids are compared to every other user story in the dataset
+        """
         corpus = retrieve_corpus(us_dataset)
-        preprocessed_docs = self.perform_preprocessing(corpus)
+        preprocessed_docs = self._perform_preprocessing(corpus)
         vectorizer = TfidfVectorizer()
         doc_vector = vectorizer.fit_transform(preprocessed_docs) # TODO: Consider preprocessor, tokenizer, stop-words from this vectorizer
-        
+
         result = []
         finished_indices = []
         unexistent_ids_count = 0
@@ -46,28 +57,28 @@ class UserStorySimilarityVsm(UserStorySimilarity):
             preprocessed_query = [preprocessed_docs[focused_index]]
             query_vector = vectorizer.transform(preprocessed_query)
             cosine_similarities_focused = cosine_similarity(doc_vector, query_vector).flatten().tolist()
-            self.process_result_entry_focused(cosine_similarities_focused, us_dataset, focused_index, finished_indices, result)
+            self._process_result_entry_focused(cosine_similarities_focused, us_dataset, focused_index, finished_indices, result)
             finished_indices.append(focused_index)
 
         return result, unexistent_ids_count
 
-    def process_result_all_pairs(self, cosine_similarities, us_dataset):
+    def _process_result_all_pairs(self, cosine_similarities, us_dataset):
         result = []
 
         for i, (score_row, us_representation_1) in enumerate(zip(cosine_similarities[:-1], us_dataset[:-1])):
             for score, us_representation_2 in zip(score_row[i+1:], us_dataset[i+1:]):
                 self.feed_uvl_mapper.map_similarity_result(us_representation_1, us_representation_2, score, self.threshold, result)
-        
+
         return result
 
-    def process_result_entry_focused(self, cosine_similarities_focuesd, us_dataset, focused_index, finished_indices, result):
+    def _process_result_entry_focused(self, cosine_similarities_focuesd, us_dataset, focused_index, finished_indices, result):
         focused_user_story = us_dataset[focused_index]
         for i, (score, us_representation) in enumerate(zip(cosine_similarities_focuesd, us_dataset)):
             if i == focused_index or i in finished_indices:
                 continue
-            self.feed_uvl_mapper.map_similarity_result(focused_user_story, us_representation, score, self.threshold, result) 
+            self.feed_uvl_mapper.map_similarity_result(focused_user_story, us_representation, score, self.threshold, result)
 
-    def perform_preprocessing(self, corpus):
+    def _perform_preprocessing(self, corpus):
         preprocessed_corpus = []
         for doc in corpus:
             doc_text = remove_punctuation(doc)
