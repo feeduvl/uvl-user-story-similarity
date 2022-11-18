@@ -4,7 +4,7 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 from src.feeduvl_mapper import FeedUvlMapper
 from src.techniques.preprocessing import (get_tokenized_list, remove_punctuation, remove_stopwords,
-                                          retrieve_corpus, word_stemmer)
+                                          retrieve_corpus, word_stemmer, remove_us_skeleton, get_us_action)
 from src.techniques.user_story_similarity import UserStorySimilarity
 
 
@@ -14,9 +14,11 @@ class UserStorySimilarityVsm(UserStorySimilarity):
     using the cosine similarity as metric
     """
 
-    def __init__(self, feed_uvl_mapper: FeedUvlMapper, threshold: float) -> None:
+    def __init__(self, feed_uvl_mapper: FeedUvlMapper, threshold: float, remove_us_skeleton: bool, only_us_action: bool) -> None:
         self.feed_uvl_mapper = feed_uvl_mapper
         self.threshold = threshold
+        self.remove_us_skeleton = remove_us_skeleton
+        self.only_us_action = only_us_action
 
     def measure_all_pairs_similarity(self, us_dataset: list):
         """ Similarity analysis for all pairwise user story combinations """
@@ -82,6 +84,10 @@ class UserStorySimilarityVsm(UserStorySimilarity):
         preprocessed_corpus = []
         for doc in corpus:
             doc_text = remove_punctuation(doc)
+            if self.only_us_action:
+                doc_text = get_us_action(doc_text)
+            elif self.remove_us_skeleton:
+                doc_text = remove_us_skeleton(doc_text)
             tokens = get_tokenized_list(doc_text)
             doc_text = remove_stopwords(tokens)
             doc_text  = word_stemmer(doc_text)

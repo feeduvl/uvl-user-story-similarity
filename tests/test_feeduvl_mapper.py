@@ -61,7 +61,6 @@ req_data = {
 expected_us_dataset_entry_dict = {
     "id": "COMET-203",
     "text": "As an user I want to do sth., so that I can achieve sth.",
-    "preprocessed_text": "As an user I want to do sth., so that I can achieve sth.",
     "acceptance_criteria": "* AC 1",
     "raw_text": "###\nAs an user\nI want to do sth.,\nso that I can achieve sth.\n###\n\nAcceptance criteria (post conditions):\n+++* AC 1+++"
 }
@@ -69,7 +68,6 @@ expected_us_dataset_entry_dict = {
 expected_us_dataset_entry_dict_croped_us = {
     "id": "COMET-203",
     "text": "As an user I want to do sth., so that I can",
-    "preprocessed_text": "As an user I want to do sth., so that I can",
     "acceptance_criteria": "* AC 1",
     "raw_text": "###\nAs an user\nI want to do sth.,\nso that I can### achieve sth.\n###\n\nAcceptance criteria (post conditions):\n+++* AC 1+++"
 }
@@ -107,6 +105,15 @@ expected_response = {
     "codes": None
 }
 
+expected_params = {
+    "threshold": 0.7,
+    "technique": "vsm",
+    "are_us_focused": False,
+    "focused_us_ids": [],
+    "remove_us_skeleton": False,
+    "only_us_action": False
+}
+
 @pytest.fixture
 def mapper():
     logger = logging.getLogger("testLogger")
@@ -136,34 +143,11 @@ def test_map_similarity_result_similar_rounded_up(mapper: FeedUvlMapper, first_u
     assert result
     TestCase().assertDictEqual(expected_result_dict_with_rounded_up_score, result[0])
 
-# test get_technique method
-@pytest.mark.parametrize("req_data", [req_data])
-def test_get_technique(mapper: FeedUvlMapper, req_data):
-    technique = mapper.get_technique(req_data)
-    assert technique == req_data["params"]["selected_technique"]
-
-@pytest.mark.parametrize("req_data", [req_data])
-def test_get_technique_missing_param(mapper: FeedUvlMapper, req_data):
-    req_data_temp = copy.deepcopy(req_data)
-    del req_data_temp["params"]["selected_technique"]
-    with pytest.raises(Exception) as e_info:
-        mapper.get_technique(req_data_temp)
-
-# test get_threshold method
-@pytest.mark.parametrize("req_data", [req_data])
-def test_get_threshold(mapper: FeedUvlMapper, req_data):
-    threshold = mapper.get_threshold(req_data)
-    assert threshold == req_data["params"]["threshold"]
-    assert isinstance(threshold, float)
-
-@pytest.mark.parametrize("req_data", [req_data])
-def test_get_threshold_casts_to_float(mapper: FeedUvlMapper, req_data):
-    temp_threshold = "0.7"
-    req_data_temp = copy.deepcopy(req_data)
-    req_data_temp["params"]["threshold"] = temp_threshold
-    threshold = mapper.get_threshold(req_data_temp)
-    assert threshold == float(temp_threshold)
-    assert isinstance(threshold, float)
+# test get_params method
+@pytest.mark.parametrize("req_data,expected_params", [(req_data, expected_params)])
+def test_get_params(mapper: FeedUvlMapper, req_data, expected_params):
+    params = mapper.get_params(req_data)
+    TestCase().assertDictEqual(expected_params, params)
 
 # test map_request method
 @pytest.mark.parametrize("req_data,expected_us_dataset_entry_dict", [(req_data, expected_us_dataset_entry_dict)])
@@ -214,23 +198,6 @@ def test_map_request_unextracted_ac(mapper: FeedUvlMapper, req_data):
     assert unextracted["ac_count"] == 1
     assert unextracted["ac_ids"][0] == req_data_temp["dataset"]["documents"][0]["id"]
     TestCase().assertDictEqual(expected_us_dataset_entry_dict_temp, us_dataset[0])
-
-# test are_documents_focused method
-@pytest.mark.parametrize("req_data", [req_data])
-def test_is_docment_focused_false(mapper: FeedUvlMapper, req_data):
-    focused, ids = mapper.are_documents_focused(req_data)
-    assert focused == False
-    assert not ids
-
-@pytest.mark.parametrize("req_data", [req_data])
-def test_is_docment_focused_true(mapper: FeedUvlMapper, req_data):
-    req_data_temp = copy.deepcopy(req_data)
-    req_data_temp["params"]["focused_document_ids"] = "COMET-1, COMET-2"
-    focused, ids = mapper.are_documents_focused(req_data_temp)
-    assert focused == True
-    assert len(ids) == 2
-    assert ids[0] == "COMET-1"
-    assert ids[1] == "COMET-2"
 
 # test map_response method
 @pytest.mark.parametrize("similarity_results,result_metrics,expected_response", [(similarity_results, result_metrics, expected_response)])

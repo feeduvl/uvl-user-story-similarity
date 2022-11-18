@@ -4,7 +4,7 @@ from logging import Logger
 from sklearn.feature_extraction.text import TfidfVectorizer
 from gensim.models import KeyedVectors
 from src.techniques.user_story_similarity import UserStorySimilarity
-from src.techniques.preprocessing import (get_tokenized_list, remove_punctuation, remove_stopwords, retrieve_corpus)
+from src.techniques.preprocessing import (get_tokenized_list, remove_punctuation, remove_stopwords, retrieve_corpus, remove_us_skeleton, get_us_action)
 from src.feeduvl_mapper import FeedUvlMapper
 
 class UserStorySimilarityWord2vec(UserStorySimilarity):
@@ -14,9 +14,11 @@ class UserStorySimilarityWord2vec(UserStorySimilarity):
     """
     model = None
 
-    def __init__(self, feed_uvl_mapper: FeedUvlMapper, threshold: float) -> None:
+    def __init__(self, feed_uvl_mapper: FeedUvlMapper, threshold: float, remove_us_skeleton: bool, only_us_action: bool) -> None:
         self.feed_uvl_mapper = feed_uvl_mapper
         self.threshold = threshold
+        self.remove_us_skeleton = remove_us_skeleton
+        self.only_us_action = only_us_action
         self.idf_of_tokens = None
         self.unique_tokens = None
 
@@ -132,6 +134,10 @@ class UserStorySimilarityWord2vec(UserStorySimilarity):
         for doc in corpus:
             # corpus preprocessing
             doc_text = remove_punctuation(doc)
+            if self.only_us_action:
+                doc_text = get_us_action(doc_text)
+            elif self.remove_us_skeleton:
+                doc_text = remove_us_skeleton(doc_text)
             tokens = get_tokenized_list(doc_text)
             tokens = remove_stopwords(tokens)
             # tokens = word_stemmer(tokens)  # TODO: is this even positively influencing the result?

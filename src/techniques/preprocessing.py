@@ -42,7 +42,7 @@ def retrieve_corpus(us_dataset):
     """ Build an user story corpus """
     corpus = []
     for entry in us_dataset:
-        corpus.append(entry["preprocessed_text"])
+        corpus.append(entry["text"])
     return corpus
 
 def get_us_action(us: str) -> str:

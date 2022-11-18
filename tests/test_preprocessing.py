@@ -66,21 +66,18 @@ def test_retrieve_corpus():
         {
             "id": "COMET-1",
             "text": "us1",
-            "preprocessed_text": "us1",
             "acceptance_criteria": "example acceptance criteria",
             "raw_text": "example raw text"
         },
         {
             "id": "COMET-2",
             "text": "us2",
-            "preprocessed_text": "us2",
             "acceptance_criteria": "example acceptance criteria",
             "raw_text": "example raw text"
         },
         {
             "id": "COMET-3",
             "text": "us3",
-            "preprocessed_text": "us3",
             "acceptance_criteria": "example acceptance criteria",
             "raw_text": "example raw text"
         }

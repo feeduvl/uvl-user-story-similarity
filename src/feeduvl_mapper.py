@@ -27,19 +27,33 @@ class FeedUvlMapper():
             }
             result.append(result_entry)
 
-    def get_technique(self, req_data):
-        """ extract the selected technique """
-        return req_data["params"]["selected_technique"]
+    def get_params(self, req_data):
+        """ extract the parameter for the current request """
+        remove_us_skeleton = False
+        only_us_action = False
+        if req_data["params"]["without_us_skeleton"] == "true":
+            remove_us_skeleton = True
+        if req_data["params"]["only_us_action"] == "true":
+            only_us_action = True
 
-    def get_threshold(self, req_data):
-        """ extract the defined similarity threshold """
-        return float(req_data["params"]["threshold"])
+        focused_us_ids: str = req_data["params"]["focused_document_ids"]
+        focused_us_ids = focused_us_ids.replace(" ", "")
+        focused_us_ids_list = []
+        if focused_us_ids:
+            focused_us_ids_list = focused_us_ids.split(",")
+
+        return {
+            "technique": req_data["params"]["selected_technique"],
+            "threshold": float(req_data["params"]["threshold"]),
+            "are_us_focused": bool(focused_us_ids_list),
+            "focused_us_ids": focused_us_ids_list,
+            "remove_us_skeleton": remove_us_skeleton,
+            "only_us_action": only_us_action
+        }
 
     def map_request(self, req_data):
         """ map Feed.UVL request in internal data structure """
         docs = req_data["dataset"]["documents"]
-        without_us_skeleton = req_data["params"]["without_us_skeleton"]
-        only_us_action = req_data["params"]["only_us_action"]
         unextracted_us_count = 0
         unextracted_us_ids = []
         unextracted_ac_count = 0
@@ -53,11 +67,10 @@ class FeedUvlMapper():
                 unextracted_ac_count += 1
                 unextracted_ac_ids.append(doc["id"])
             try:
-                us_text, us_text_preprocessed = self._extract_us(doc["text"], without_us_skeleton, only_us_action)
+                us_text = self._extract_us(doc["text"])
                 us_dataset.append({
                     "id": doc["id"],
                     "text": us_text,
-                    "preprocessed_text": us_text_preprocessed,
                     "acceptance_criteria": ac,
                     "raw_text": doc["text"]
                 })
@@ -78,17 +91,6 @@ class FeedUvlMapper():
         }
         return us_dataset, metrics
 
-
-    def are_documents_focused(self, req_data) -> Tuple[bool, list[str]]:
-        """ Check if there are focused user story documents """
-        params = req_data["params"]
-        if not params["focused_document_ids"]:
-            return False, ""
-        ids: str = params["focused_document_ids"]
-        ids = ids.replace(" ", "")
-        ids_array = ids.split(",")
-        return True, ids_array
-
     def map_response(self, similarity_results, metrics):
         """ Map the result of the analysis run into a Feed.UVL response """
         return {
@@ -100,20 +102,14 @@ class FeedUvlMapper():
             "codes": None
         }
 
-    def _extract_us(self, text: str, without_skeleton: bool, only_action: bool) -> str:
+    def _extract_us(self, text: str) -> str:
         try:
             start = text.index("###")
             end = text.index("###", start+1)
             us = text[start+3:end]
-            us = self._remove_newlines(us)
+            return self._remove_newlines(us)
         except ValueError as value_err:
             raise UserStoryParsingError from value_err
-        # TODO: would be prettier to do this in the respective preprocessing mthods wthin the NLP techniques
-        if only_action == "true":
-            return us, get_us_action(us)
-        if without_skeleton == "true":
-            return us, remove_us_skeleton(us)
-        return us, us
 
     def _extract_acs(self, text: str) -> Tuple[str, bool]:
         try:

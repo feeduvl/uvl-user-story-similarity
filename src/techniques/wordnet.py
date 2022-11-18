@@ -3,11 +3,10 @@
 from nltk.corpus import wordnet as wn
 from sklearn.feature_extraction.text import TfidfVectorizer
 from src.techniques.user_story_similarity import UserStorySimilarity
-from src.techniques.preprocessing import (get_tokenized_list, pos_tagger, remove_punctuation, remove_stopwords, retrieve_corpus)
+from src.techniques.preprocessing import (get_tokenized_list, pos_tagger, remove_punctuation, remove_stopwords, retrieve_corpus, get_us_action, remove_us_skeleton)
 from src.feeduvl_mapper import FeedUvlMapper
 
 # TODO: ? POS tagging (tell Wordnet what POS we’re looking for)
-# Wordnet only contains info on nouns, verbs, adjectives and adverbs
 
 class UserStorySimilarityWordnet(UserStorySimilarity):
     """
@@ -15,9 +14,11 @@ class UserStorySimilarityWordnet(UserStorySimilarity):
     combined with the scoring formular from mihalcea
     """
 
-    def __init__(self, feed_uvl_mapper: FeedUvlMapper, threshold: float) -> None:
+    def __init__(self, feed_uvl_mapper: FeedUvlMapper, threshold: float, remove_us_skeleton: bool, only_us_action: bool) -> None:
         self.feed_uvl_mapper = feed_uvl_mapper
         self.threshold = threshold
+        self.remove_us_skeleton = remove_us_skeleton
+        self.only_us_action = only_us_action
         self.idf_of_tokens = None
         self.unique_tokens = None
 
@@ -107,6 +108,10 @@ class UserStorySimilarityWordnet(UserStorySimilarity):
         for doc in corpus:
             # corpus preprocessing
             doc_text = remove_punctuation(doc)
+            if self.only_us_action:
+                doc_text = get_us_action(doc_text)
+            elif self.remove_us_skeleton:
+                doc_text = remove_us_skeleton(doc_text)
             tokens = get_tokenized_list(doc_text)
             tokens = remove_stopwords(tokens)
             pos_tagged = pos_tagger(tokens)
