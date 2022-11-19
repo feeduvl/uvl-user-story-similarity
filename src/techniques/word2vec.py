@@ -1,10 +1,11 @@
 """ techniques.word2vec module """
 
-from logging import Logger
+import logging
 from sklearn.feature_extraction.text import TfidfVectorizer
 from gensim.models import KeyedVectors
 from src.techniques.user_story_similarity import UserStorySimilarity
-from src.techniques.preprocessing import (get_tokenized_list, remove_punctuation, remove_stopwords, retrieve_corpus, remove_us_skeleton, get_us_action)
+from src.techniques.preprocessing import (get_tokenized_list, remove_punctuation,
+    remove_stopwords, retrieve_corpus, remove_us_skeleton, get_us_action)
 from src.feeduvl_mapper import FeedUvlMapper
 
 class UserStorySimilarityWord2vec(UserStorySimilarity):
@@ -14,16 +15,16 @@ class UserStorySimilarityWord2vec(UserStorySimilarity):
     """
     model = None
 
-    def __init__(self, feed_uvl_mapper: FeedUvlMapper, threshold: float, remove_us_skeleton: bool, only_us_action: bool) -> None:
+    def __init__(self, feed_uvl_mapper: FeedUvlMapper, threshold: float, without_us_skeleton: bool, only_us_action: bool) -> None:
         self.feed_uvl_mapper = feed_uvl_mapper
         self.threshold = threshold
-        self.remove_us_skeleton = remove_us_skeleton
+        self.without_us_skeleton = without_us_skeleton
         self.only_us_action = only_us_action
         self.idf_of_tokens = None
         self.unique_tokens = None
 
     @staticmethod
-    def load_model(logger: Logger):
+    def load_model(logger: logging.Logger):
         """ load a pretrained model which is used for similarity analysis with Word2vec """
         logger.info("Loading word2vec model ...")
         try:
@@ -44,7 +45,7 @@ class UserStorySimilarityWord2vec(UserStorySimilarity):
         corpus = retrieve_corpus(us_dataset)
         preprocessed_corpus, preprocessed_docs =self._perform_preprocessing(corpus)
         result = []
-        if not preprocessed_docs:
+        if not preprocessed_docs or len(preprocessed_docs) == 1:
             return result
 
         vectorizer = TfidfVectorizer()
@@ -65,11 +66,13 @@ class UserStorySimilarityWord2vec(UserStorySimilarity):
         """
         corpus = retrieve_corpus(us_dataset)
         preprocessed_corpus, preprocessed_docs =self._perform_preprocessing(corpus)
+        result = []
+        if not preprocessed_docs or len(preprocessed_docs) == 1:
+            return result
         vectorizer = TfidfVectorizer()
         self.unique_tokens = vectorizer.fit(preprocessed_docs).get_feature_names_out()
         self.idf_of_tokens = vectorizer.idf_
 
-        result = []
         finished_indices = []
         unexistent_ids_count = 0
         for focused_id in focused_ids:
@@ -109,8 +112,8 @@ class UserStorySimilarityWord2vec(UserStorySimilarity):
                 continue
             token_index = next((i for i, token in enumerate(self.unique_tokens) if token == word_1.lower()), None)
             if token_index is None:
-                # TODO: consider this
-                print("not found")
+                logging.warning(f'Token index for word {word_1} is not found. This should not occur.')
+                continue
             idf_of_token = self.idf_of_tokens[token_index]
 
             best_score = 0
@@ -121,11 +124,11 @@ class UserStorySimilarityWord2vec(UserStorySimilarity):
                     scores.append(score)
                 except KeyError:
                     continue
-            best_score = max(scores)  # TODO: what if scores is empty (not very likely)
-
-            best_score *= idf_of_token
-            numerator += best_score
-            denominator += idf_of_token
+            best_score = max(scores)
+            if best_score is not None:
+                best_score *= idf_of_token
+                numerator += best_score
+                denominator += idf_of_token
         return numerator, denominator
 
     def _perform_preprocessing(self, corpus):
@@ -136,11 +139,10 @@ class UserStorySimilarityWord2vec(UserStorySimilarity):
             doc_text = remove_punctuation(doc)
             if self.only_us_action:
                 doc_text = get_us_action(doc_text)
-            elif self.remove_us_skeleton:
+            elif self.without_us_skeleton:
                 doc_text = remove_us_skeleton(doc_text)
             tokens = get_tokenized_list(doc_text)
             tokens = remove_stopwords(tokens)
-            # tokens = word_stemmer(tokens)  # TODO: is this even positively influencing the result?
             preprocessed_doc_text = ' '.join(tokens)
             preprocessed_corpus.append(tokens)
             preprocessed_docs.append(preprocessed_doc_text)

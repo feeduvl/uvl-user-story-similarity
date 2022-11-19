@@ -57,7 +57,6 @@ def test_remove_stopwords_string_input():
 def test_remove_punctuation():
     doc_text = r"""Remove, al:l punctuation!, also all of this:!"#$%&'()*+,-./:;<=>?@[\]^_`{|}~"""
     result = remove_punctuation(doc_text)
-    print(result)
     expected_doc_text = "Remove all punctuation also all of this"
     assert result == expected_doc_text
 

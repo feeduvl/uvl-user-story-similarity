@@ -1,12 +1,13 @@
 """ techniques.wordnet module """
 
+import logging
 from nltk.corpus import wordnet as wn
 from sklearn.feature_extraction.text import TfidfVectorizer
 from src.techniques.user_story_similarity import UserStorySimilarity
-from src.techniques.preprocessing import (get_tokenized_list, pos_tagger, remove_punctuation, remove_stopwords, retrieve_corpus, get_us_action, remove_us_skeleton)
+from src.techniques.preprocessing import (get_tokenized_list, pos_tagger,
+    remove_punctuation, remove_stopwords,
+    retrieve_corpus, get_us_action, remove_us_skeleton)
 from src.feeduvl_mapper import FeedUvlMapper
-
-# TODO: ? POS tagging (tell Wordnet what POS we’re looking for)
 
 class UserStorySimilarityWordnet(UserStorySimilarity):
     """
@@ -14,10 +15,10 @@ class UserStorySimilarityWordnet(UserStorySimilarity):
     combined with the scoring formular from mihalcea
     """
 
-    def __init__(self, feed_uvl_mapper: FeedUvlMapper, threshold: float, remove_us_skeleton: bool, only_us_action: bool) -> None:
+    def __init__(self, feed_uvl_mapper: FeedUvlMapper, threshold: float, without_us_skeleton: bool, only_us_action: bool) -> None:
         self.feed_uvl_mapper = feed_uvl_mapper
         self.threshold = threshold
-        self.remove_us_skeleton = remove_us_skeleton
+        self.without_us_skeleton = without_us_skeleton
         self.only_us_action = only_us_action
         self.idf_of_tokens = None
         self.unique_tokens = None
@@ -28,7 +29,7 @@ class UserStorySimilarityWordnet(UserStorySimilarity):
         preprocessed_corpus, all_synsets, preprocessed_docs = self._perform_preprocessing(corpus)
         result = []
 
-        if not all_synsets:
+        if not all_synsets or len(all_synsets) == 1:
             return result
 
         vectorizer = TfidfVectorizer()
@@ -49,11 +50,13 @@ class UserStorySimilarityWordnet(UserStorySimilarity):
         """
         corpus = retrieve_corpus(us_dataset)
         preprocessed_corpus, all_synsets, preprocessed_docs = self._perform_preprocessing(corpus)
+        result = []
+        if not all_synsets or len(all_synsets) == 1:
+            return result
         vectorizer = TfidfVectorizer()
         self.unique_tokens = vectorizer.fit(preprocessed_docs).get_feature_names_out()
         self.idf_of_tokens = vectorizer.idf_
 
-        result = []
         finished_indices = []
         unexistent_ids_count = 0
         for focused_id in focused_ids:
@@ -78,6 +81,8 @@ class UserStorySimilarityWordnet(UserStorySimilarity):
         return result, unexistent_ids_count
 
     def _user_story_similarity(self, synsets_1, synsets_2, user_story_1, user_story_2):
+        if not synsets_1 or not synsets_2:
+            return 0
         numerator_1, denominator_1 = self._calculate_term(synsets_1, synsets_2, user_story_1)
         numerator_2, denominator_2 = self._calculate_term(synsets_2, synsets_1, user_story_2)
         score = 0.5*(numerator_1/denominator_1 + numerator_2/denominator_2)
@@ -87,15 +92,20 @@ class UserStorySimilarityWordnet(UserStorySimilarity):
         numerator = 0.0
         denominator = 0.0
         for synset_1, word_1 in zip(synsets_1, user_story_1):
+            if not synset_1:
+                continue
             token_index = next((i for i, token in enumerate(self.unique_tokens) if token == word_1.lower()), None)
             if token_index is None:
-                # TODO: consider this
-                print("not found")
+                logging.warning(f"Token index for word {word_1} is not found. This should not occur.")
+                continue
             idf_of_token = self.idf_of_tokens[token_index]
-
-            best_score = max([synset_1.wup_similarity(ss) for ss in synsets_2])
+            scores = []
+            for synset_2 in synsets_2:
+                if not synset_2:
+                    continue
+                scores.append(synset_1.wup_similarity(synset_2))
+            best_score = max(scores)
             if best_score is not None:
-                #TODO: what to do in the other case
                 best_score *= idf_of_token
                 numerator += best_score
                 denominator += idf_of_token
@@ -110,7 +120,7 @@ class UserStorySimilarityWordnet(UserStorySimilarity):
             doc_text = remove_punctuation(doc)
             if self.only_us_action:
                 doc_text = get_us_action(doc_text)
-            elif self.remove_us_skeleton:
+            elif self.without_us_skeleton:
                 doc_text = remove_us_skeleton(doc_text)
             tokens = get_tokenized_list(doc_text)
             tokens = remove_stopwords(tokens)
@@ -118,16 +128,13 @@ class UserStorySimilarityWordnet(UserStorySimilarity):
             preprocessed_corpus.append(tokens)
 
             # predefine the synsets for each corpus element
-            # TODO: what happens if the synsets list results empty here
             synsets = [self._tagged_to_synset(*tagged_word) for tagged_word in pos_tagged]
-            synsets = [ss for ss in synsets if ss]
             all_synsets.append(synsets)
 
             preprocessen_doc_text = ' '.join(tokens)
             preprocessen_docs.append(preprocessen_doc_text)
         return preprocessed_corpus, all_synsets, preprocessen_docs
 
-    #TODO: I call it only with one param?
     def _tagged_to_synset(self, word, tag):
         wn_tag = self._penn_to_wn(tag)
         if wn_tag is None:
@@ -135,7 +142,7 @@ class UserStorySimilarityWordnet(UserStorySimilarity):
 
         try:
             return wn.synsets(word, wn_tag)[0]
-        except:
+        except Exception:
             return None
 
     def _penn_to_wn(self, tag):

@@ -2,6 +2,7 @@
 
 import string
 import re
+import logging
 from nltk import word_tokenize, pos_tag
 from nltk.stem import PorterStemmer
 from sklearn.feature_extraction.text import ENGLISH_STOP_WORDS
@@ -54,7 +55,7 @@ def get_us_action(us: str) -> str:
     try:
         return re.search(r'i want(.*?)$', us, flags=re.IGNORECASE | re.S).group(1).strip()
     except AttributeError:
-        # TODO: log message
+        logging.warning("Could not get the action from one user story")
         return us
 
 def remove_us_skeleton(us: str) -> str:

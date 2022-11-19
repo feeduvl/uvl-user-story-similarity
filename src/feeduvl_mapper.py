@@ -3,7 +3,6 @@
 import re
 from typing import Tuple
 from src.exeptions import UserStoryParsingError
-from src.techniques.preprocessing import get_us_action, remove_us_skeleton
 
 class FeedUvlMapper():
     """ Mapper between Feed.UVL and this microservice """

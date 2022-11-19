@@ -14,10 +14,10 @@ class UserStorySimilarityVsm(UserStorySimilarity):
     using the cosine similarity as metric
     """
 
-    def __init__(self, feed_uvl_mapper: FeedUvlMapper, threshold: float, remove_us_skeleton: bool, only_us_action: bool) -> None:
+    def __init__(self, feed_uvl_mapper: FeedUvlMapper, threshold: float, without_us_skeleton: bool, only_us_action: bool) -> None:
         self.feed_uvl_mapper = feed_uvl_mapper
         self.threshold = threshold
-        self.remove_us_skeleton = remove_us_skeleton
+        self.without_us_skeleton = without_us_skeleton
         self.only_us_action = only_us_action
 
     def measure_all_pairs_similarity(self, us_dataset: list):
@@ -25,7 +25,7 @@ class UserStorySimilarityVsm(UserStorySimilarity):
         corpus = retrieve_corpus(us_dataset)
         preprocessed_docs = self._perform_preprocessing(corpus)
         vectorizer = TfidfVectorizer()
-        if not preprocessed_docs:
+        if not preprocessed_docs or len(preprocessed_docs) == 1:
             return []
         doc_vector = vectorizer.fit_transform(preprocessed_docs)
         cosine_similarities = cosine_similarity(doc_vector).tolist()
@@ -34,7 +34,6 @@ class UserStorySimilarityVsm(UserStorySimilarity):
         result = self._process_result_all_pairs(cosine_similarities, us_dataset)
         return result
 
-    # TODO: handle case when besides the focused user story there is no other
     def measure_pairwise_similarity(self, us_dataset: list, focused_ids: list[str], unextracted_ids: list[str]):
         """
         Similarity analysis for all focused user stories\n
@@ -42,8 +41,10 @@ class UserStorySimilarityVsm(UserStorySimilarity):
         """
         corpus = retrieve_corpus(us_dataset)
         preprocessed_docs = self._perform_preprocessing(corpus)
+        if not preprocessed_docs or len(preprocessed_docs) == 1:
+            return []
         vectorizer = TfidfVectorizer()
-        doc_vector = vectorizer.fit_transform(preprocessed_docs) # TODO: Consider preprocessor, tokenizer, stop-words from this vectorizer
+        doc_vector = vectorizer.fit_transform(preprocessed_docs)
 
         result = []
         finished_indices = []
@@ -86,7 +87,7 @@ class UserStorySimilarityVsm(UserStorySimilarity):
             doc_text = remove_punctuation(doc)
             if self.only_us_action:
                 doc_text = get_us_action(doc_text)
-            elif self.remove_us_skeleton:
+            elif self.without_us_skeleton:
                 doc_text = remove_us_skeleton(doc_text)
             tokens = get_tokenized_list(doc_text)
             doc_text = remove_stopwords(tokens)
