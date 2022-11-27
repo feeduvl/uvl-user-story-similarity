@@ -39,16 +39,16 @@ class UserStorySimilarityVsm(UserStorySimilarity):
         Similarity analysis for all focused user stories\n
         The user stories given in focused focused_ids are compared to every other user story in the dataset
         """
-        corpus = retrieve_corpus(us_dataset)
-        preprocessed_docs = self._perform_preprocessing(corpus)
-        if not preprocessed_docs or len(preprocessed_docs) == 1:
-            return []
-        vectorizer = TfidfVectorizer()
-        doc_vector = vectorizer.fit_transform(preprocessed_docs)
-
         result = []
         finished_indices = []
         unexistent_ids_count = 0
+        if len(us_dataset) <= 1:
+            return result, unexistent_ids_count
+        corpus = retrieve_corpus(us_dataset)
+        preprocessed_docs = self._perform_preprocessing(corpus)
+        vectorizer = TfidfVectorizer()
+        doc_vector = vectorizer.fit_transform(preprocessed_docs)
+
         for focused_id in focused_ids:
             focused_index = next((i for i, item in enumerate(us_dataset) if item["id"] == focused_id), None)
             if focused_index is None:
