@@ -22,11 +22,11 @@ class UserStorySimilarityVsm(UserStorySimilarity):
 
     def measure_all_pairs_similarity(self, us_dataset: list):
         """ Similarity analysis for all pairwise user story combinations """
+        if len(us_dataset) <= 1:
+            return []
         corpus = retrieve_corpus(us_dataset)
         preprocessed_docs = self._perform_preprocessing(corpus)
         vectorizer = TfidfVectorizer()
-        if not preprocessed_docs or len(preprocessed_docs) == 1:
-            return []
         doc_vector = vectorizer.fit_transform(preprocessed_docs)
         cosine_similarities = cosine_similarity(doc_vector).tolist()
 

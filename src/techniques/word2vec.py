@@ -96,13 +96,13 @@ class UserStorySimilarityWord2vec(UserStorySimilarity):
         return result, unexistent_ids_count
 
     def _user_story_similarity(self, user_story_1, user_story_2):
-        numerator_1, denominator_1 = self._calculate_term(user_story_1, user_story_2)
-        numerator_2, denominator_2 = self._calculate_term(user_story_2, user_story_1)
+        numerator_1, denominator_1 = self._calculate_fraction_mihalcea(user_story_1, user_story_2)
+        numerator_2, denominator_2 = self._calculate_fraction_mihalcea(user_story_2, user_story_1)
 
         score = 0.5*(numerator_1/denominator_1 + numerator_2/denominator_2)
         return score
 
-    def _calculate_term(self, user_story_1, user_story_2):
+    def _calculate_fraction_mihalcea(self, user_story_1, user_story_2):
         numerator = 0.0
         denominator = 0.0
         for word_1 in user_story_1:
@@ -110,13 +110,6 @@ class UserStorySimilarityWord2vec(UserStorySimilarity):
                 UserStorySimilarityWord2vec.model[word_1]
             except KeyError:
                 continue
-            token_index = next((i for i, token in enumerate(self.unique_tokens) if token == word_1.lower()), None)
-            if token_index is None:
-                logging.warning(f'Token index for word {word_1} is not found. This should not occur.')
-                continue
-            idf_of_token = self.idf_of_tokens[token_index]
-
-            best_score = 0
             scores = []
             for word_2 in user_story_2:
                 try:
@@ -124,12 +117,21 @@ class UserStorySimilarityWord2vec(UserStorySimilarity):
                     scores.append(score)
                 except KeyError:
                     continue
+            if not scores:
+                continue
             best_score = max(scores)
-            if best_score is not None:
-                best_score *= idf_of_token
-                numerator += best_score
-                denominator += idf_of_token
+            idf_of_token = self._get_idf_of_token(word_1)
+            best_score *= idf_of_token
+            numerator += best_score
+            denominator += idf_of_token
         return numerator, denominator
+
+    def _get_idf_of_token(self, token):
+        token_index = next((i for i, token in enumerate(self.unique_tokens) if token == token.lower()), None)
+        if token_index is None:
+            logging.warning(f'Token index for word {token} is not found. This should not occur.')
+            return 0
+        return self.idf_of_tokens[token_index]
 
     def _perform_preprocessing(self, corpus):
         preprocessed_corpus = []

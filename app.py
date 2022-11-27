@@ -9,7 +9,7 @@ from src.techniques.word2vec import UserStorySimilarityWord2vec
 app = Flask(__name__)
 
 @app.route("/hitec/classify/concepts/us-similarity/run", methods=["POST"])
-def post_user_stories():
+def start_analysis():
     start = time()
     data = json.loads(request.data)
     mapper = FeedUvlMapper(app.logger)

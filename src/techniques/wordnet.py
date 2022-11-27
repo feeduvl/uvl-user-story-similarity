@@ -83,33 +83,37 @@ class UserStorySimilarityWordnet(UserStorySimilarity):
     def _user_story_similarity(self, synsets_1, synsets_2, user_story_1, user_story_2):
         if not synsets_1 or not synsets_2:
             return 0
-        numerator_1, denominator_1 = self._calculate_term(synsets_1, synsets_2, user_story_1)
-        numerator_2, denominator_2 = self._calculate_term(synsets_2, synsets_1, user_story_2)
+        numerator_1, denominator_1 = self._calculate_fraction_mihalcea(synsets_1, synsets_2, user_story_1)
+        numerator_2, denominator_2 = self._calculate_fraction_mihalcea(synsets_2, synsets_1, user_story_2)
         score = 0.5*(numerator_1/denominator_1 + numerator_2/denominator_2)
         return score
 
-    def _calculate_term(self, synsets_1, synsets_2, user_story_1):
+    def _calculate_fraction_mihalcea(self, synsets_1, synsets_2, user_story_1):
         numerator = 0.0
         denominator = 0.0
         for synset_1, word_1 in zip(synsets_1, user_story_1):
             if not synset_1:
                 continue
-            token_index = next((i for i, token in enumerate(self.unique_tokens) if token == word_1.lower()), None)
-            if token_index is None:
-                logging.warning(f"Token index for word {word_1} is not found. This should not occur.")
-                continue
-            idf_of_token = self.idf_of_tokens[token_index]
             scores = []
             for synset_2 in synsets_2:
                 if not synset_2:
                     continue
                 scores.append(synset_1.wup_similarity(synset_2))
+            if not scores:
+                continue
             best_score = max(scores)
-            if best_score is not None:
-                best_score *= idf_of_token
-                numerator += best_score
-                denominator += idf_of_token
+            idf_of_token = self._get_idf_of_token(word_1)
+            best_score *= idf_of_token
+            numerator += best_score
+            denominator += idf_of_token
         return numerator, denominator
+
+    def _get_idf_of_token(self, token):
+        token_index = next((i for i, token in enumerate(self.unique_tokens) if token == token.lower()), None)
+        if token_index is None:
+            logging.warning(f'Token index for word {token} is not found. This should not occur.')
+            return 0
+        return self.idf_of_tokens[token_index]
 
     def _perform_preprocessing(self, corpus):
         preprocessed_corpus = []
