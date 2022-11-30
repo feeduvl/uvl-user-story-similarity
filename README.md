@@ -4,10 +4,6 @@ This is a microservice which takes user stories (linked with acceptance criteria
 
 For the computation three different NLP techniques based on three different language models (vector space model, Wordnet and Word2vec) can be chosen from.
 
-## REST API
-
-TODO: OpenAPI doc
-
 ## Parameter
 
 - `selected_technique`: Which NLP technique to use for the similarity measurement.
@@ -34,3 +30,8 @@ TODO: OpenAPI doc
 
 - `coverage run --source=src -m pytest`
 - `coverage report`
+- `pylint src`
+
+## Generate Class diagram
+
+- `pyreverse -o png -p uvl-user-story-similarity src`

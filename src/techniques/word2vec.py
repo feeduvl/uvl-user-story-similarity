@@ -42,11 +42,11 @@ class UserStorySimilarityWord2vec(UserStorySimilarity):
 
     def measure_all_pairs_similarity(self, us_dataset):
         """ Similarity analysis for all pairwise user story combinations """
+        result = []
+        if len(us_dataset) <= 1:
+            return result
         corpus = retrieve_corpus(us_dataset)
         preprocessed_corpus, preprocessed_docs =self._perform_preprocessing(corpus)
-        result = []
-        if not preprocessed_docs or len(preprocessed_docs) == 1:
-            return result
 
         vectorizer = TfidfVectorizer()
         self.unique_tokens = vectorizer.fit(preprocessed_docs).get_feature_names_out()
@@ -64,17 +64,18 @@ class UserStorySimilarityWord2vec(UserStorySimilarity):
         Similarity analysis for all focused user stories\n
         The user stories given in focused focused_ids are compared to every other user story in the dataset
         """
+        result = []
+        unexistent_ids_count = 0
+        if len(us_dataset) <= 1:
+            return result, unexistent_ids_count
         corpus = retrieve_corpus(us_dataset)
         preprocessed_corpus, preprocessed_docs =self._perform_preprocessing(corpus)
-        result = []
-        if not preprocessed_docs or len(preprocessed_docs) == 1:
-            return result
+        
         vectorizer = TfidfVectorizer()
         self.unique_tokens = vectorizer.fit(preprocessed_docs).get_feature_names_out()
         self.idf_of_tokens = vectorizer.idf_
 
         finished_indices = []
-        unexistent_ids_count = 0
         for focused_id in focused_ids:
             focused_index = next((i for i, item in enumerate(us_dataset) if item["id"] == focused_id), None)
             if focused_index is None:
