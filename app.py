@@ -18,30 +18,30 @@ def start_analysis():
     params = mapper.get_params(data)
 
     us_similarity = None
-    match params["technique"]:
-        case "vsm":
-            us_similarity = UserStorySimilarityVsm(
-                mapper,
-                params["threshold"],
-                params["remove_us_skeleton"],
-                params["only_us_action"]
-            )
-        case "wordnet":
-            us_similarity = UserStorySimilarityWordnet(
-                mapper,
-                params["threshold"],
-                params["remove_us_skeleton"],
-                params["only_us_action"]
-            )
-        case "word2vec":
-            us_similarity = UserStorySimilarityWord2vec(
-                mapper,
-                params["threshold"],
-                params["remove_us_skeleton"],
-                params["only_us_action"]
-            )
-        case _:
-            pass
+    technique = params["technique"]
+    if(technique == "vsm"):
+        us_similarity = UserStorySimilarityVsm(
+            mapper,
+            params["threshold"],
+            params["remove_us_skeleton"],
+            params["only_us_action"]
+        )
+    elif(technique == "wordnet"):
+        us_similarity = UserStorySimilarityWordnet(
+            mapper,
+            params["threshold"],
+            params["remove_us_skeleton"],
+            params["only_us_action"]
+        )
+    elif(technique == "word2vec"):
+        us_similarity = UserStorySimilarityWord2vec(
+            mapper,
+            params["threshold"],
+            params["remove_us_skeleton"],
+            params["only_us_action"]
+        )
+    else:
+        pass
 
     unexistent_ids_count = 0
     result = []
