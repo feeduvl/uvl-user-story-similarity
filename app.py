@@ -5,6 +5,10 @@ from src.feeduvl_mapper import FeedUvlMapper
 from src.techniques.vsm import UserStorySimilarityVsm
 from src.techniques.wordnet import UserStorySimilarityWordnet
 from src.techniques.word2vec import UserStorySimilarityWord2vec
+from src.techniques.bert_based import UserStorySimilarityBertBased
+from src.techniques.use import UserStorySimilarityUse
+
+import configuration
 
 app = Flask(__name__)
 
@@ -14,8 +18,9 @@ def start_analysis():
     data = json.loads(request.data)
     mapper = FeedUvlMapper(app.logger)
     us_dataset, dataset_metrics = mapper.map_request(data)
-
     params = mapper.get_params(data)
+
+    supported_huggingface_models = configuration.get_supported_huggingface_models()
 
     us_similarity = None
     technique = params["technique"]
@@ -63,7 +68,8 @@ def start_analysis():
     unexistent_ids_count = 0
     result = []
     if params["are_us_focused"]:
-        result, unexistent_ids_count = us_similarity.measure_pairwise_similarity(us_dataset, params["focused_us_ids"], dataset_metrics["us_ids"])
+        focused_us_ids = params["focused_us_ids"]
+        result, unexistent_ids_count = us_similarity.measure_pairwise_similarity(us_dataset, focused_us_ids, dataset_metrics["us_ids"])
     else:
         result = us_similarity.measure_all_pairs_similarity(us_dataset)
     metrics = {
