@@ -70,13 +70,13 @@ class FeedUvlMapper():
         us_dataset = []
         avg_words = 0
         for doc in docs:
-            ac, is_ac_extracted = self._extract_acs(doc["raw_text"])
+            ac, is_ac_extracted = self._extract_acs(doc["text"])
             if not is_ac_extracted:
                 self.logger.warning(f'Acceptance Criteria with US id {doc["id"]} could not be extracted.')
                 unextracted_ac_count += 1
                 unextracted_ac_ids.append(doc["id"])
             try:
-                us_text = self._extract_us(doc["raw_text"])
+                us_text = self._extract_us(doc["text"])
                 us_dataset.append({
                     "id": doc["id"],
                     "text": us_text,
