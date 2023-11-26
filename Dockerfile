@@ -8,6 +8,7 @@ RUN cd data && gdown 1hlGZrC5IMJjiYPvTxgHnG85R0XK0wA_i
 RUN cd data && gzip -d GoogleNews-vectors-negative300-SLIM.bin.gz
 
 RUN pip3 install --no-cache-dir --upgrade pip -r requirements.txt
+RUN pip install torch==2.1.0 --index-url https://download.pytorch.org/whl/cpu
 RUN python3 -m nltk.downloader punkt
 RUN python3 -m nltk.downloader wordnet
 RUN python3 -m nltk.downloader omw-1.4

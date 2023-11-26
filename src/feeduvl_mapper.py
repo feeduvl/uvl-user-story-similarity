@@ -30,24 +30,34 @@ class FeedUvlMapper():
         """ extract the parameter for the current request """
         remove_us_skeleton = False
         only_us_action = False
-        if req_data["params"]["without_us_skeleton"] == "true":
-            remove_us_skeleton = True
-        if req_data["params"]["only_us_action"] == "true":
-            only_us_action = True
-
-        focused_us_ids: str = req_data["params"]["focused_document_ids"]
-        focused_us_ids = focused_us_ids.replace(" ", "")
+        no_preprocessing = False
+        if "without_us_skeleton" in req_data["params"]:
+            remove_us_skeleton = bool(req_data["params"]["without_us_skeleton"])
+        if "only_us_action" in req_data["params"]:
+            only_us_action = bool(req_data["params"]["only_us_action"])
+        if "no_preprocessing" in req_data["params"]:
+            no_preprocessing = bool(req_data["params"]["no_preprocessing"])
         focused_us_ids_list = []
-        if focused_us_ids:
-            focused_us_ids_list = focused_us_ids.split(",")
+        if "focused_document_ids" in req_data["params"]:
+            focused_us_ids: str = req_data["params"]["focused_document_ids"]
+            focused_us_ids = focused_us_ids.replace(" ", "")
+            if focused_us_ids:
+                focused_us_ids_list = focused_us_ids.split(",")
+
+        if(no_preprocessing and (only_us_action or remove_us_skeleton)):
+            raise """
+                  Unsupported parameter set: if no_preprocessing is True, 
+                  only_us_action and without_us_skeleton must be False.
+                  """
 
         return {
             "technique": req_data["params"]["selected_technique"],
             "threshold": float(req_data["params"]["threshold"]),
-            "are_us_focused": bool(focused_us_ids_list),
+            "are_us_focused": len(focused_us_ids_list) > 0,
             "focused_us_ids": focused_us_ids_list,
             "remove_us_skeleton": remove_us_skeleton,
-            "only_us_action": only_us_action
+            "only_us_action": only_us_action,
+            "no_preprocessing": no_preprocessing
         }
 
     def map_request(self, req_data):
@@ -60,13 +70,13 @@ class FeedUvlMapper():
         us_dataset = []
         avg_words = 0
         for doc in docs:
-            ac, is_ac_extracted = self._extract_acs(doc["text"])
+            ac, is_ac_extracted = self._extract_acs(doc["raw_text"])
             if not is_ac_extracted:
                 self.logger.warning(f'Acceptance Criteria with US id {doc["id"]} could not be extracted.')
                 unextracted_ac_count += 1
                 unextracted_ac_ids.append(doc["id"])
             try:
-                us_text = self._extract_us(doc["text"])
+                us_text = self._extract_us(doc["raw_text"])
                 us_dataset.append({
                     "id": doc["id"],
                     "text": us_text,
@@ -80,7 +90,8 @@ class FeedUvlMapper():
                 unextracted_us_count += 1
                 unextracted_us_ids.append(doc["id"])
 
-        avg_words /= len(us_dataset)
+        len_us_dataset = 1 if len(us_dataset) == 0 else len(us_dataset)
+        avg_words /= len_us_dataset
         metrics = {
             "us_count": unextracted_us_count,
             "us_ids": unextracted_us_ids,

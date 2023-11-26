@@ -40,8 +40,25 @@ def start_analysis():
             params["remove_us_skeleton"],
             params["only_us_action"]
         )
+    elif(technique in supported_huggingface_models):
+        us_similarity = UserStorySimilarityBertBased(
+            mapper,
+            params["threshold"],
+            params["remove_us_skeleton"],
+            params["only_us_action"],
+            params["no_preprocessing"],
+            supported_huggingface_models[technique]
+        )
+    elif(technique == "use"):
+        us_similarity = UserStorySimilarityUse(
+            mapper,
+            params["threshold"],
+            params["remove_us_skeleton"],
+            params["only_us_action"],
+            params["no_preprocessing"]
+        )
     else:
-        pass
+        raise f"Unsupported technique: {technique}"
 
     unexistent_ids_count = 0
     result = []
