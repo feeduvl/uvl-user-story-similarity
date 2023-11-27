@@ -32,11 +32,17 @@ class FeedUvlMapper():
         only_us_action = False
         no_preprocessing = False
         if "without_us_skeleton" in req_data["params"]:
-            remove_us_skeleton = bool(req_data["params"]["without_us_skeleton"])
+            param_value = req_data["params"]["without_us_skeleton"]
+            param_value = str(param_value).lower()
+            remove_us_skeleton = param_value == 'true'
         if "only_us_action" in req_data["params"]:
-            only_us_action = bool(req_data["params"]["only_us_action"])
+            param_value = req_data["params"]["only_us_action"]
+            param_value = str(param_value).lower()
+            only_us_action = param_value == 'true'
         if "no_preprocessing" in req_data["params"]:
-            no_preprocessing = bool(req_data["params"]["no_preprocessing"])
+            param_value = req_data["params"]["no_preprocessing"]
+            param_value = str(param_value).lower()
+            no_preprocessing = param_value == 'true'
         focused_us_ids_list = []
         if "focused_document_ids" in req_data["params"]:
             focused_us_ids: str = req_data["params"]["focused_document_ids"]
