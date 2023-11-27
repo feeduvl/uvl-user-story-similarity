@@ -44,11 +44,9 @@ class FeedUvlMapper():
             if focused_us_ids:
                 focused_us_ids_list = focused_us_ids.split(",")
 
-        if(no_preprocessing and (only_us_action or remove_us_skeleton)):
-            raise """
-                  Unsupported parameter set: if no_preprocessing is True, 
-                  only_us_action and without_us_skeleton must be False.
-                  """
+        preprocessing_count = int(no_preprocessing) + int(only_us_action) + int(remove_us_skeleton)
+        if(preprocessing_count > 1):
+            self.logger.warning(f'Invalid Parameterset: no_preprocessing = {no_preprocessing}, only_us_action = {only_us_action}, without_us_skeleton = {remove_us_skeleton}.')
 
         return {
             "technique": req_data["params"]["selected_technique"],
